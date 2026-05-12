@@ -1,13 +1,136 @@
 library(exams)
 library(rqti)
 
-# TODO:
-# - Add explicit grading mechanisms for single-choice exercises.
-# - Add explicit grading mechanisms for multiple-choice exercises.
-# rqti supports mpc equivalent to rule = "false" and negative = TRUE
-# rqti supports sc partial = F, negative =F, which is "standard"
-# rqti also supports sc partial = F and negative > 0; but this will always be -points/(k-1) k = number of choices
-# - Map exams grading/scoring metadata to the corresponding rqti grading setup.
+# Default exams grading policy used when an exercise does not provide explicit
+# grading metadata.
+#
+# exams uses this default for multiple-choice style evaluation. For
+# single-choice exercises, the implicit default is treated as rqti's standard
+# scoring and therefore does not trigger a warning.
+default_eval <- list(partial = TRUE, rule = "false2", negative = FALSE)
+
+# Return the exams grading settings for one rendered exercise.
+#
+# The returned list is normalized to contain partial, rule, and negative. The
+# internal .explicit flag records whether the exercise supplied grading metadata
+# itself. This lets single-choice exercises with no explicit grading map quietly
+# to rqti's standard scoring.
+exerciseEval <- function(x) {
+    eval <- x$metainfo$eval
+    if (is.null(eval)) {
+        eval <- default_eval
+        eval$.explicit <- FALSE
+        return(eval)
+    }
+
+    eval <- utils::modifyList(default_eval, eval)
+    eval$.explicit <- TRUE
+    eval
+}
+
+# Strict scalar logical checks used when comparing exams metadata values.
+isFalse <- function(x) {
+    is.logical(x) && length(x) == 1L && !is.na(x) && !x
+}
+
+isTrue <- function(x) {
+    is.logical(x) && length(x) == 1L && !is.na(x) && x
+}
+
+isNegative <- function(x) {
+    if (is.logical(x)) {
+        return(isTRUE(x))
+    }
+
+    is.numeric(x) && length(x) == 1L && !is.na(x) && x != 0
+}
+
+# Warn when exams asks for a grading setup that rqti cannot express exactly.
+#
+# The item is still generated using the nearest rqti scoring setup.
+warnUnsupportedGrading <- function(type, used, requested) {
+    warning(sprintf(
+        paste0("rqti cannot represent exams %s grading exactly; ",
+               "using %s instead of partial = %s, negative = %s, rule = %s."),
+        type,
+        used,
+        deparse(requested$partial)[[1L]],
+        deparse(requested$negative)[[1L]],
+        deparse(requested$rule)[[1L]]
+    ), call. = FALSE)
+}
+
+# Add the exams exercise type to the S3 class vector.
+#
+# Rendered exercises from exams are plain lists. The type-specific methods in
+# this file dispatch on x$metainfo$type, so this helper makes that class tagging
+# explicit and reusable.
+classedExamsExercise <- function(x) {
+    type <- x$metainfo$type[[1L]]
+    if (!inherits(x, type)) {
+        class(x) <- c(type, "exams_exercise", class(x))
+    }
+
+    x
+}
+
+# Map exams grading metadata to the rqti constructor arguments for each exercise
+# type.
+#
+# Dispatch uses the exams exercise type class, e.g. "schoice" or "mchoice".
+# Each method returns a named list of rqti arguments to merge into the item
+# constructor arguments.
+rqtiGradingSetup <- function(x, points) {
+    UseMethod("rqtiGradingSetup", x)
+}
+
+# Multiple-choice grading.
+#
+# rqti can represent the exams setup equivalent to rule = "false" and
+# negative = TRUE: correct options receive equal positive shares of the total
+# points, and incorrect options receive equal negative shares. Other exams
+# grading policies are mapped to this rqti representation with a warning.
+rqtiGradingSetup.mchoice <- function(x, points) {
+    eval <- exerciseEval(x)
+    if (!identical(eval$rule, "false") || !isTrue(eval$negative)) {
+        warnUnsupportedGrading("multiple-choice",
+                               'rule = "false", negative = TRUE',
+                               eval)
+    }
+
+    solution <- x$metainfo$solution
+    list(points = ifelse(solution,
+                         points / sum(solution),
+                         -points / sum(!solution)))
+}
+
+# Single-choice grading.
+#
+# rqti's standard scheme gives full points for the one correct option and zero
+# otherwise. rqti's penalty scheme gives incorrect answers -points / (k - 1),
+# where k is the number of choices. Explicit exams grading that cannot be
+# represented exactly is mapped to one of these schemes with a warning; implicit
+# default exams grading is mapped to standard silently.
+rqtiGradingSetup.schoice <- function(x, points) {
+    eval <- exerciseEval(x)
+    negative <- isNegative(eval$negative)
+    if (isTRUE(eval$.explicit) && (!isFalse(eval$partial) || negative)) {
+        warnUnsupportedGrading("single-choice",
+                               if (negative) {
+                                   '"penalty" scoring'
+                               } else {
+                                   '"standard" scoring'
+                               },
+                               eval)
+    }
+
+    list(scoring_scheme = if (negative) "penalty" else "standard")
+}
+
+# Fallback for exercise types without rqti grading support.
+rqtiGradingSetup.exams_exercise <- function(x, points) {
+    stop("Unsupported exercise type: ", x$metainfo$type[[1L]], call. = FALSE)
+}
 
 # HTML transformer used by exams::xexams().
 #
@@ -108,8 +231,7 @@ baseRqtiArgs <- function(x, path_rmd) {
 # - asRqtiItem.mchoice() handles multiple-choice exercises.
 # - asRqtiItem.exams_exercise() errors for unsupported types.
 asRqtiItem <- function(x, path_rmd) {
-    type <- x$metainfo$type[[1L]]
-    class(x) <- c(type, "exams_exercise", class(x))
+    x <- classedExamsExercise(x)
     UseMethod("asRqtiItem", x)
 }
 
@@ -118,9 +240,11 @@ asRqtiItem <- function(x, path_rmd) {
 # rqti::SingleChoice expects one correct solution index, so the logical exams
 # solution vector is converted with which().
 asRqtiItem.schoice <- function(x, path_rmd) {
+    x <- classedExamsExercise(x)
     args <- baseRqtiArgs(x, path_rmd)
     args$choices <- stripMathSpans(x$questionlist)
     args$solution <- which(x$metainfo$solution)
+    args$scoring_scheme <- rqtiGradingSetup(x, args$points)$scoring_scheme
     args$Class <- "SingleChoice"
 
     do.call("new", args = args)
@@ -132,14 +256,10 @@ asRqtiItem.schoice <- function(x, path_rmd) {
 # Each incorrect option receives an equal negative share, matching the scoring
 # convention used in the original proof-of-concept.
 asRqtiItem.mchoice <- function(x, path_rmd) {
+    x <- classedExamsExercise(x)
     args <- baseRqtiArgs(x, path_rmd)
     args$choices <- stripMathSpans(x$questionlist)
-
-    points <- args$points
-    solution <- x$metainfo$solution
-    args$points <- ifelse(solution,
-                          points / sum(solution),
-                          -points / sum(!solution))
+    args$points <- rqtiGradingSetup(x, args$points)$points
     args$Class <- "MultipleChoice"
 
     do.call("new", args = args)
@@ -221,14 +341,14 @@ buildExams2RqtiAssessment <- function(exercise_dir = default_exercise_dir,
 # Build the assessment test and open it with rqti's QTIJS preview renderer.
 #
 # Extra arguments in ... are passed to rqti::render_qtijs().
-renderExams2RqtiAssessment <- function(exercise_dir = default_exercise_dir,
+Exams2RqtiAssessment <- function(exercise_dir = default_exercise_dir,
                                        seed = 0,
                                        verify = FALSE,
                                        ...) {
     test <- buildExams2RqtiAssessment(exercise_dir = exercise_dir,
                                       seed = seed,
                                       verify = verify)
-    render_qtijs(test, ...)
+    test
 }
 
 
@@ -241,8 +361,10 @@ renderExams2RqtiAssessment <- function(exercise_dir = default_exercise_dir,
 # renderExams2RqtiAssessment(exercise_dir = "...") manually after sourcing this
 # script.
 default_exercise_dir <- system.file("exercises", package = "exams")
-start_server()
 exercise_dir <- default_exercise_dir
 seed <- 0
 verify <- FALSE
-renderExams2RqtiAssessment(exercise_dir = exercise_dir, verify = verify)
+test <- Exams2RqtiAssessment(exercise_dir = exercise_dir, verify = verify)
+qti_zip <- createQtiTest(test, "temp")
+unzip(qti_zip, exdir = "temp", overwrite = TRUE)
+render_qtijs(test)
