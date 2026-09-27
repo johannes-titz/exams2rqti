@@ -75,6 +75,8 @@ headers. That method authenticated successfully using the configured local
 keyring credentials. The returned `X-OLAT-TOKEN` was used for the normal resource
 upload. No credentials or tokens are stored in this report.
 
-The rqti authentication implementation still needs this update; it was not
-changed as part of this upload. The existing `upload2opal()` call will continue
-to fail against this OPAL endpoint until that is fixed.
+Follow-up: upstream rqti commit `b5080ceb` already implements this login change.
+The development branch through `78d9cad3` was merged with the local CSS changes
+and installed as version `1.3.1.9000`. The merged `rqti::opal()` authenticated
+successfully, `isUserLoggedIn()` returned true, and `getLMSResourcesByName()`
+found the existing test with key `56358502401`. No duplicate upload was needed.
