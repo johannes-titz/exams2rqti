@@ -1,14 +1,29 @@
 Package: exams2rqti
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Translate 'exams' Exercises to 'rqti' Objects
 Version: 0.1.0
-Authors@R: structure(list(list(given = "Johannes", family = "Titz", role = c("aut", "cre"), email = "johannes.titz@gmail.com", comment = c(ORCID = "0000-0002-1102-5719"))), class = "person")
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: GPL-3 + file LICENSE
+Authors@R: person("Johannes", "Titz", role = c("aut", "cre"),
+    email = "johannes.titz@gmail.com",
+    comment = c(ORCID = "0000-0002-1102-5719"))
+Description: An experimental adapter from rendered 'exams' choice, numeric,
+    string and cloze exercises to 'rqti' assessment objects. Reuses 'exams' for
+    rendering and 'rqti' for QTI output, including mixed interactions, manual
+    essay and upload responses, and explicit checks for grading policies.
+License: GPL-3
 Encoding: UTF-8
-LazyData: true
+Depends:
+    R (>= 4.1.0)
 Imports:
-    exams,
-    rqti
-RoxygenNote: 7.3.3
+    exams (>= 2.4.4),
+    htmltools,
+    methods,
+    rqti (>= 1.3.0),
+    withr,
+    xml2
+Suggests:
+    magick,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0

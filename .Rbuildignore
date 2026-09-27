@@ -1,2 +1,13 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.agents$
+^\.codex$
+^\.vscode$
+^\.github$
+^email\.txt$
+^exercises$
+^temp$
+^notes$
+^.*\.zip$
+^.*\.tar\.gz$
+^.*\.Rcheck$

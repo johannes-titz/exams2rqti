@@ -1,0 +1,35 @@
+```{r setup, include=FALSE}
+values <- sample(10:99, sample(3:7, 1))
+while (all(values %% 2 == 0) || all(values %% 2 != 0)) {
+  values <- sample(10:99, length(values))
+}
+correct <- values %% 2 == 0
+```
+
+Question
+========
+Select the even numbers. The values are `r paste(values, collapse = ", ")`.
+
+Answerlist
+----------
+```{r choices, echo=FALSE, results='asis'}
+writeLines(paste("*", values))
+```
+
+Solution
+========
+Even numbers are divisible by two.
+
+Answerlist
+----------
+```{r explanations, echo=FALSE, results='asis'}
+writeLines(paste("*", ifelse(correct, "Even.", "Odd.")))
+```
+
+Meta-information
+================
+exname: Random even numbers
+extype: mchoice
+exsolution: `r paste(as.integer(correct), collapse = "")`
+expoints: 2.5
+exshuffle: TRUE
