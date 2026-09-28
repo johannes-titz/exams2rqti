@@ -14,7 +14,7 @@ cssChoiceVariant <- function(item) {
     stopifnot(methods::is(item, "ExamsSingleChoice") ||
               methods::is(item, "ExamsMultipleChoice"))
     if (!"css" %in% methods::slotNames(item)) {
-        stop("Install rqti with item CSS support (development version 1.3.0.9000).")
+        stop("Install rqti with item CSS support (development version 1.3.1.9000).")
     }
     used <- character()
     replace_styles <- function(fragment) {

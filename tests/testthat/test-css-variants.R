@@ -30,7 +30,7 @@ for (example in c("flags", "fruit2", "logic", "automaton")) {
     test_that(paste(example, "CSS variants validate and preserve the original task"), {
         skip_if_not(rmarkdown::pandoc_available(), "Pandoc is required")
         skip_if_not("css" %in% methods::slotNames("AssessmentItem"),
-                    "Requires rqti item CSS support (1.3.0.9000)")
+                    "Requires rqti item CSS support (1.3.1.9000)")
         if (example %in% c("logic", "automaton")) {
             skip_if_not_installed("magick")
             skip_if_not(nzchar(Sys.which("pdflatex")), "TikZ examples require pdflatex")

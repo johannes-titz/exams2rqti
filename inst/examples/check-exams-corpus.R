@@ -1,6 +1,7 @@
 # Run from the repository root after pkgload::load_all():
 # source("inst/examples/check-exams-corpus.R")
 # runExamsCorpus("/tmp/exams-corpus")
+# runExamsCorpus("/tmp/exams-rmd", seeds = 0, formats = "Rmd")
 # Optional rendered_dir reuses explicit snapshots from an earlier rendering run.
 
 checkCorpusContent <- function(exercise, doc) {
@@ -33,10 +34,14 @@ checkCorpusContent <- function(exercise, doc) {
     invisible(TRUE)
 }
 
-runExamsCorpus <- function(output, seeds = c(0L, 17L), rendered_dir = NULL, package_only = FALSE) {
+runExamsCorpus <- function(output, seeds = c(0L, 17L), rendered_dir = NULL,
+                           package_only = FALSE, formats = c("Rmd", "Rnw")) {
+    stopifnot(length(formats) > 0L, all(formats %in% c("Rmd", "Rnw")),
+              !anyDuplicated(formats))
     dir.create(output, recursive = TRUE, showWarnings = FALSE)
+    pattern <- paste0("[.](", paste(formats, collapse = "|"), ")$")
     sources <- list.files(system.file("exercises", package = "exams"),
-                          pattern = "[.](Rmd|Rnw)$", full.names = TRUE)
+                          pattern = pattern, full.names = TRUE)
     cases <- expand.grid(file = sources, seed = seeds, stringsAsFactors = FALSE)
     rows <- list()
     items <- list()
@@ -123,6 +128,7 @@ runExamsCorpus <- function(output, seeds = c(0L, 17L), rendered_dir = NULL, pack
     }
     report <- do.call(rbind, rows)
     writeLines(c(capture.output(sessionInfo()), paste("Sources:", length(sources)),
+        paste("Formats:", paste(formats, collapse = ", ")),
         paste("Seeds:", paste(seeds, collapse = ", ")), paste("Rendered cache:", rendered_dir)), file.path(output, "session.txt"))
     print(with(report, table(type, status)))
     invisible(list(report = report, archives = archives))

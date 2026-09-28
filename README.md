@@ -14,39 +14,101 @@ Authors keep their exams sources. The adapter reuses exams for executing R,
 sampling answers and rendering content, and rqti for serialization, validation
 and preview. It does not translate source files into rqti Rmd.
 
-## Install and try
+## Install from GitHub
 
-Requires R >= 4.1, exams >= 2.4.4, rqti >= 1.3.0, and Pandoc for the default
-HTML converter. Rnw sources can additionally require LaTeX. From this checkout:
+The adapter currently needs the rqti development version that preserves
+preformatted code while pretty-printing QTI and packages item CSS. Install rqti
+first, then this package:
 
 ```r
-install.packages(c("exams", "rqti", "withr", "pkgload"))
-pkgload::load_all(".")
+install.packages("remotes")
+remotes::install_github("shevandrin/qti")
+remotes::install_github("johannes-titz/exams2rqti")
+```
 
-item <- examsRmd2RqtiObject("swisscapital.Rmd", seed = 42)
+The [v0.1.0 release](https://github.com/johannes-titz/exams2rqti/releases/tag/v0.1.0)
+also contains two ready-to-share files:
+
+- `exams2rqti_0.1.0.tar.gz`, the installable R source package;
+- `exams2rqti-openolat-review-seed-0.zip`, the exact 39-item QTI package tested
+  in OPAL/ONYX. Import this ZIP directly as a QTI 2.1 test in OPAL or OpenOlat;
+  do not unpack it first.
+
+The review archive contains the Rmd versions of the installed exams examples,
+labels every item with its source filename, and omits six examples whose inline
+CSS needs separate cross-player review. It includes single-choice,
+multiple-choice, numeric, string, mixed cloze, essay and file-upload
+interactions. Automatic scoring can be tested immediately; essay/upload scores
+require the LMS's assessor workflow.
+
+## Translate exercises
+
+Requires R >= 4.1, exams >= 2.4.4, rqti >= 1.3.1.9000, and Pandoc for the default
+HTML converter. Rnw sources can additionally require LaTeX. After installation:
+
+```r
+library(exams2rqti)
+
+swiss <- system.file("exercises", "swisscapital.Rmd", package = "exams")
+item <- examsRmd2RqtiObject(swiss, seed = 42)
 rqti::verify_qti(item)
 rqti::render_qtijs(item)  # Explicitly start a preview when desired.
 
+example_dir <- system.file("exercises", package = "exams")
 items <- translateExercises(
-  c("swisscapital.Rmd", "switzerland.Rmd", "boxplots.Rmd"),
+  file.path(example_dir, c("swisscapital.Rmd", "switzerland.Rmd", "boxplots.Rmd")),
   seed = 42, points = 2
 )
 
 assessment <- buildExams2RqtiAssessment(
-  files = c("swisscapital.Rmd", "switzerland.Rmd"),
+  files = file.path(example_dir, c("swisscapital.Rmd", "switzerland.Rmd")),
   seed = 42, verify = TRUE
 )
 rqti::createQtiTest(assessment, dir = "qti-output")
 
 # Mixed interactions; prepare HTML for standard QTI and bundle item CSS.
-# Requires the updated rqti checkout (1.3.0.9000) for item stylesheets.
-item <- examsRmd2RqtiObject("lm3.Rmd", seed = 17, prepare_html = TRUE)
+# Requires the updated rqti checkout (1.3.1.9000) for item stylesheets.
+item <- examsRmd2RqtiObject(file.path(example_dir, "lm3.Rmd"), seed = 17,
+                           prepare_html = TRUE)
 rqti::createQtiTask(item, dir = "qti-output", zip = TRUE)
 ```
 
 Use `R CMD INSTALL .` to install the package normally. Loading it has no rendering,
 export or browser side effects. The old automatic demo is now an explicit example
 in `inst/examples/choice-demo.R`. Existing conversion function names are retained.
+
+## Rebuild the OPAL/OpenOlat review test
+
+The release ZIP was produced through the same corpus validation used by the
+test bed. The following recreates it from the installed exams Rmd examples:
+
+```r
+library(exams2rqti)
+
+source(system.file("examples", "check-exams-corpus.R", package = "exams2rqti"))
+source(system.file("examples", "build-opal-review.R", package = "exams2rqti"))
+source(system.file("examples", "check-opal-review.R", package = "exams2rqti"))
+
+corpus_dir <- file.path(tempdir(), "exams2rqti-corpus")
+review_dir <- file.path(getwd(), "openolat-review")
+
+runExamsCorpus(corpus_dir, seeds = 0, formats = "Rmd")
+review <- buildOpalReview(corpus_dir, review_dir, seed = 0,
+                          formats = "Rmd", omit_css = TRUE)
+checkOpalReviewPackage(
+  review$archive,
+  file.path(review_dir, "audit.csv")
+)
+
+review$archive
+# Import the returned exams_seed_0.zip directly into OPAL or OpenOlat.
+```
+
+This path needs Pandoc plus the packages in `Suggests`. `magick` and a working
+ImageMagick installation are needed for the image audit. Set `omit_css = FALSE`
+to include the six CSS-bearing Rmd examples after checking their appearance in
+the target LMS. Use `formats = c("Rmd", "Rnw")` in both calls for the complete
+corpus; Rnw rendering additionally needs LaTeX.
 
 ## Integration boundary
 
@@ -63,7 +125,7 @@ Manual upload/essay and numeric verbatim interactions have adapter methods.
 All extensions use rqti's tag-generation methods before XML serialization.
 
 ```r
-x <- readExamsExercise("switzerland.Rmd", seed = 5)
+x <- readExamsExercise(file.path(example_dir, "switzerland.Rmd"), seed = 5)
 item <- asRqtiItem(x, identifier = "switzerland_5", points = 3,
                   eval = list(rule = "true"))
 ```
@@ -137,7 +199,7 @@ example styles into classes and passing a CSS file to rqti's assessment-level
 `css: |` text block. This is not native rqti item-Rmd YAML support, and the main
 adapter's explicit `prepareQtiHtml()` step now handles inline-style extraction.
 
-With the updated rqti development version (`1.3.0.9000`), class-based versions
+With the updated rqti development version (`1.3.1.9000`), class-based versions
 of **all four** examples are available in `inst/examples/css-choice-variants.R`.
 They use rqti's new item-level `css` slot, which writes a stylesheet and includes
 it in the XML, ZIP and manifest. To produce original XML, corrected XML with CSS,

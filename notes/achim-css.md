@@ -61,7 +61,7 @@ nichtstandardisierte `rebuildVariables`-Attribut weg.
 Die veröffentlichte rqti-Version 1.3.0 unterstützt diese Angaben noch nicht im
 YAML-Kopf einer einzelnen Rmd-Aufgabe. Im lokalen rqti-Checkout wurde diese
 Unterstützung jetzt ergänzt, als `f2b1621d` committet und lokal als
-Version `1.3.0.9000` installiert (noch nicht veröffentlicht):
+Version `1.3.1.9000` installiert (noch nicht veröffentlicht):
 
 ```yaml
 identifier: flags

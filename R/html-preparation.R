@@ -11,7 +11,7 @@
 #' @export
 prepareQtiHtml <- function(item) {
     if (!methods::is(item, "AssessmentItem") || !"css" %in% methods::slotNames(item)) {
-        stop("Requires an rqti item with CSS support (rqti >= 1.3.0.9000).", call. = FALSE)
+        stop("Requires an rqti item with CSS support (rqti >= 1.3.1.9000).", call. = FALSE)
     }
     styles <- character()
     classes <- character()
