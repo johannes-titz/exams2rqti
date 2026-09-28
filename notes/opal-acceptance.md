@@ -23,16 +23,24 @@ the CSS-corrected items; `formats = c("Rmd", "Rnw")` includes both source format
 The automated corpus validation continues to cover both formats.
 
 Upload and resource read-back both returned HTTP 200; the resource type is
-`FileResource.TEST`. This establishes successful API import, not successful
-ONYX execution. The following checks remain to be performed in OPAL/ONYX.
-The completed package-level checks and the verbatim-whitespace diagnosis are
-recorded in `notes/opal-static-audit.md`.
+`FileResource.TEST`. Package-level checks, the verbatim-whitespace diagnosis,
+and the completed live player audit are recorded in
+`notes/opal-static-audit.md`.
 
 On 2026-09-28 the resource was replaced after rqti commit `0ef522c6` fixed XML
 pretty-printing inside `pre` elements while retaining readable formatting
 elsewhere. OPAL returned HTTP 200, and downloading the resource again produced
 the same MD5 as the validated local ZIP:
 `8f873ee9f3d0941515228feb94fd01d9` (455237 bytes).
+
+The live audit then exposed oversized essay fields: ONYX rendered QTI
+`expectedLength="1000"` as a textarea roughly 10000 pixels wide. The adapter now
+caps this display hint at 100, without imposing a response-length restriction.
+The corrected package was uploaded to the same resource with MD5
+`bd8f792b44c1aec5dcf231572974c9ef` (455233 bytes). All 39 question pages were
+visited successfully, representative images, tables, code, mixed interactions,
+attachments and tolerance scoring were exercised, and an essay plus file upload
+survived page navigation. Assessor-side manual grading remains outstanding.
 
 ## 1. Import and display: every item
 

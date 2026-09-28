@@ -65,8 +65,15 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
         if (is.list(chars)) chars <- chars[[1L]]
         lines <- metadata$essay_fieldlines
         if (is.null(lines)) lines <- if (length(chars) > 1 && !is.na(chars[2])) chars[2] else 10
+        # exams uses exmaxchars as an answer-size limit, while QTI's
+        # expectedLength is only a display-size hint. ONYX renders large hints
+        # literally as very wide textareas, so keep the hint within a usable
+        # line length without changing the accepted response length.
+        expected_length <- if (length(chars) && !is.na(chars[1])) {
+            min(as.numeric(chars[1]), 100)
+        } else 100
         return(methods::new("ExamsManual", identifier = "component", points = points, kind = type,
-            expected_length = if (length(chars) && !is.na(chars[1])) as.numeric(chars[1]) else 1000,
+            expected_length = expected_length,
             expected_lines = as.numeric(lines)))
     }
     stop("Unsupported cloze response type: ", type, call. = FALSE)

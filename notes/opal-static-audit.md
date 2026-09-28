@@ -1,10 +1,9 @@
 # OPAL static audit: 2026-09-28
 
-This audit covers the current 39-item Rmd-only OPAL review test. The resource
-was downloaded again through the OPAL REST API. After the verbatim fix, its MD5
-was identical to the rebuilt local archive
-(`8f873ee9f3d0941515228feb94fd01d9`), so OPAL retained the replacement package
-bytes without rewriting its QTI.
+This audit covers the current 39-item Rmd-only OPAL review test. After the
+verbatim and essay-width fixes, OPAL accepted the replacement package through
+the REST API. The uploaded archive has MD5
+`bd8f792b44c1aec5dcf231572974c9ef` (455233 bytes).
 
 The reproducible structural audit is in
 `inst/examples/check-opal-review.R`. For the remote package it found:
@@ -71,12 +70,43 @@ full rqti suite passed with 717 assertions. The replacement 39-item package
 passes QTI validation and a raw serialized scan finds no whitespace between any
 of its 16 `pre` elements and their `code` children.
 
-## What remains a browser/player test
+## Live OPAL/ONYX browser audit
 
-No browser surface was available to the computer-use tool in this session.
-Therefore this audit does not claim that ONYX visually renders the images,
-tables, math, code or controls correctly, nor that its runtime honors the
-tolerances and mixed manual scoring. Those checks require an authenticated
-player attempt in OPAL/ONYX. The most important manual cases are the two
-1350-pixel images, all six table-bearing items, all six verbatim-risk items,
-numeric tolerance boundaries, and `essayreg2.Rmd`/`lm3.Rmd` manual grading.
+The updated package was opened in the ONYX player and all 39 items were visited.
+Across the question pages, the player rendered 5 images, 4 semantic tables, 7
+verbatim blocks and 170 response controls. No visible image was broken, no
+MathJax error was present, and no page overflow or damaged `pre` whitespace was
+found. The remaining images, tables and verbatim blocks occur in feedback and
+are covered by the static package audit above.
+
+The following representative content was also checked visually:
+
+- `anova.Rmd`, `essayreg.Rmd`, `penguins.Rmd`, and `ttest.Rmd` preserve code and
+  console-output alignment.
+- `boxplots.Rmd`, `Rlogo.Rmd`, and `scatterplot.Rmd` display their images at the
+  expected natural sizes.
+- `fourfold2.Rmd` and `regression.Rmd` render aligned tables.
+- `essayreg2.Rmd`, `boxhist2.Rmd`, and `lm2.Rmd` render their mixed interaction
+  types without overlap or clipping.
+- All six linked CSV attachments returned HTTP 200 with `text/csv` content.
+
+ONYX originally rendered `exmaxchars = 1000` as a roughly 10000-pixel-wide
+textarea because it treated QTI `expectedLength` as a literal display width.
+The adapter now caps that display hint at 100 while leaving the response
+unrestricted. In the replacement package, `essayreg.Rmd`, `essayreg2.Rmd`, and
+`lm3.Rmd` render 1040-pixel-wide textareas without document overflow. A typed
+essay and an uploaded `.R` file in `essayreg2.Rmd` both remained present after
+navigating away and back.
+
+Runtime scoring checks passed for a correct single-choice answer, a correct
+three-answer multiple-choice response, and numeric tolerance. ONYX awarded full
+credit for 3.009 when the correct answer was 3 with tolerance 0.01, and rejected
+1951.552 when the correct answer was 1951.532 with tolerance 0.01. For the
+accepted in-tolerance value, ONYX still placed an “Answered incorrectly” marker
+beside the field even though the item score was 1/1; this is a player display
+inconsistency rather than a response-processing failure.
+
+During AJAX navigation, ONYX logged a non-fatal JavaScript error in
+`onyxShowAriaAttributesIfFalse` (`undefined.replace`). It caused no visible or
+functional failure during the audit. Assessor-side manual grading and feedback
+display after submission still require an authenticated grading workflow.

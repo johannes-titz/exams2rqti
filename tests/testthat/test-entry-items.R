@@ -68,12 +68,23 @@ test_that("manual essay and upload scores remain pending", {
     expect_valid_qti(item)
     doc <- item_xml(item)
     expect_length(xml2::xml_find_all(doc, "//uploadInteraction"), 1)
-    expect_length(xml2::xml_find_all(doc, "//extendedTextInteraction"), 1)
+    essay <- xml2::xml_find_all(doc, "//extendedTextInteraction")
+    expect_length(essay, 1)
+    expect_identical(xml2::xml_attr(essay, "expectedLength"), "100")
+    expect_identical(xml2::xml_attr(essay, "expectedLines"), "10")
     pending <- score_qti(doc, responses = list(part1_RESPONSE = 2), outcomes = TRUE)
     expect_null(pending$SCORE)
     expect_equal(pending$AUTO_SCORE, 1)
     expect_equal(score_qti(doc, responses = list(part1_RESPONSE = 2),
                            manual_scores = list(part2_SCORE = 1.5, part3_SCORE = 2)), 4.5)
+
+    # exams' exmaxchars is an answer-size limit. It must not create a
+    # thousands-of-pixels-wide textarea in ONYX via QTI expectedLength.
+    x$metainfo$maxchars <- c(1000, 5, 50)
+    capped <- item_xml(asRqtiItem(x))
+    essay <- xml2::xml_find_first(capped, "//extendedTextInteraction")
+    expect_identical(xml2::xml_attr(essay, "expectedLength"), "100")
+    expect_identical(xml2::xml_attr(essay, "expectedLines"), "5")
 })
 
 test_that("cloze single-choice penalties cannot make the item total negative", {

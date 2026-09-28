@@ -14,6 +14,8 @@
   explicit examples and automated tests; remove rendering at package load time.
 * Preserve exams' default multiple-choice grading and supported alternative
   partial-credit rules. Reject unsupported policies rather than approximating.
+* Cap the QTI essay display-width hint at 100 characters so large exams
+  `exmaxchars` limits do not produce unusably wide textareas in ONYX.
 * Retain general solutions and pair answer explanations with their choice text.
 * Extend rqti choice item-body rendering to preserve HTML in answer options.
   Fill missing image alt attributes and omit the nonstandard assessment attribute.
