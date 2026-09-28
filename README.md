@@ -110,6 +110,100 @@ to include the six CSS-bearing Rmd examples after checking their appearance in
 the target LMS. Use `formats = c("Rmd", "Rnw")` in both calls for the complete
 corpus; Rnw rendering additionally needs LaTeX.
 
+## Suggested integration in exams
+
+The clean upstream design is an `exams2rqti()` front end beside
+`exams2moodle()`. It should use the existing `xexams()` pipeline through the
+HTML transform, translate each resulting exercise list into an rqti object, and
+then let rqti serialize the items, assessment, manifest, CSS and ZIP. It should
+not parse Rmd itself or edit serialized XML afterward.
+
+The following is the intended shape of that front end. It is abbreviated to
+show the package boundary; argument normalization, type-specific grading
+options, section titles and file naming can follow `exams2moodle()`.
+
+```r
+exams2rqti <- function(file, n = 1L, nsamp = NULL, dir = ".",
+                       name = "exam", seed = NULL, points = NULL,
+                       converter = "pandoc-mathjax", eval = NULL,
+                       shuffle = FALSE, ...) {
+  if (!requireNamespace("rqti", quietly = TRUE))
+    stop("Package 'rqti' is required.")
+
+  html <- make_exercise_transform_html(
+    converter = converter,
+    base64 = TRUE,
+    ...
+  )
+
+  # xexams performs weaving, reading, sampling and HTML transformation once.
+  rendered <- xexams(
+    file, n = n, nsamp = nsamp, dir = dir, seed = seed, points = points,
+    driver = list(
+      sweave = list(quiet = TRUE, pdf = FALSE, png = TRUE),
+      read = NULL,
+      transform = html,
+      write = NULL
+    )
+  )
+
+  archives <- lapply(seq_along(rendered), function(version) {
+    exercises <- rendered[[version]]
+    items <- Map(function(exercise, number) {
+      item <- asRqtiItem(
+        exercise,
+        identifier = sprintf("item_%02d", number),
+        eval = eval,
+        shuffle = shuffle
+      )
+      prepareQtiHtml(item)
+    }, exercises, seq_along(exercises))
+
+    section <- rqti::assessmentSection(items, identifier = "exercises")
+    test <- rqti::assessmentTest(
+      section = list(section),
+      identifier = sprintf("%s_%02d", name, version),
+      title = name,
+      rebuild_variables = NA,
+      fallback_titles = "filename"
+    )
+    rqti::createQtiTest(test, dir = dir, zip_only = TRUE)
+  })
+
+  invisible(archives)
+}
+```
+
+In exams itself, the one-exercise translator represented here by
+`asRqtiItem()` can be an internal function analogous to a
+`make_question_*()` backend. Depending on `exams2rqti` from exams would create
+a circular dependency because this adapter already imports exams; upstreaming
+the translator into exams and keeping rqti as the optional output backend avoids
+that cycle. This repository can remain the reference implementation and
+cross-package test suite.
+
+The contract at the translator boundary is deliberately small:
+
+1. `xexams()` supplies one fully rendered exercise list with
+   `metainfo$markup = "html"`, question/solution fragments, answer lists and
+   final metadata. Rendering and random sampling must not run a second time.
+2. The translator maps the effective exams grading configuration explicitly.
+   It must reject policies that cannot be expressed faithfully rather than
+   silently changing scores.
+3. HTML transformation uses `base64 = TRUE`, so plots and supplements travel
+   with the item. `prepareQtiHtml()` moves inline declarations into item CSS;
+   rqti then owns stylesheet references and manifest entries.
+4. Each item and test receives a stable, unique QTI identifier. One rendered
+   exam version becomes one `assessmentTest`; exams controls version generation
+   and rqti controls QTI packaging.
+5. `rqti::verify_qti()` checks the resulting items/test before delivery.
+   Essay and upload components remain pending until the LMS supplies their
+   manual outcome scores.
+
+The current `asRqtiItem()` implementation and its tests cover the mapping that
+could be moved upstream. Keeping this rendered-object boundary also allows exams
+to add other input formats without changing the rqti backend.
+
 ## Integration boundary
 
 `asRqtiItem()` accepts one rendered exams exercise list, which is the intended
