@@ -8,6 +8,6 @@
 ^exercises$
 ^temp$
 ^notes$
-^.*\.zip$
+^[^/]*\.zip$
 ^.*\.tar\.gz$
 ^.*\.Rcheck$

@@ -1,7 +1,7 @@
 Package: exams2rqti
 Type: Package
 Title: Translate 'exams' Exercises to 'rqti' Objects
-Version: 0.1.0
+Version: 0.1.0.9000
 URL: https://github.com/johannes-titz/exams2rqti
 BugReports: https://github.com/johannes-titz/exams2rqti/issues
 Authors@R: person("Johannes", "Titz", role = c("aut", "cre"),

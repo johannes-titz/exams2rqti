@@ -26,13 +26,18 @@ remotes::install_github("shevandrin/qti")
 remotes::install_github("johannes-titz/exams2rqti")
 ```
 
-The [v0.1.0 release](https://github.com/johannes-titz/exams2rqti/releases/tag/v0.1.0)
-also contains two ready-to-share files:
+This is a development version. Installing it from GitHub builds the R package
+directly from the repository. The repository also contains the
+[exact 39-item QTI package tested in OPAL/ONYX](inst/extdata/exams2rqti-openolat-review-seed-0.zip).
+Import that ZIP directly as a QTI 2.1 test in OPAL or OpenOlat; do not unpack it
+first. An installed copy can locate the same file with:
 
-- `exams2rqti_0.1.0.tar.gz`, the installable R source package;
-- `exams2rqti-openolat-review-seed-0.zip`, the exact 39-item QTI package tested
-  in OPAL/ONYX. Import this ZIP directly as a QTI 2.1 test in OPAL or OpenOlat;
-  do not unpack it first.
+```r
+system.file(
+  "extdata", "exams2rqti-openolat-review-seed-0.zip",
+  package = "exams2rqti"
+)
+```
 
 The review archive contains the Rmd versions of the installed exams examples,
 labels every item with its source filename, and omits six examples whose inline
@@ -79,7 +84,7 @@ in `inst/examples/choice-demo.R`. Existing conversion function names are retaine
 
 ## Rebuild the OPAL/OpenOlat review test
 
-The release ZIP was produced through the same corpus validation used by the
+The checked-in ZIP was produced through the same corpus validation used by the
 test bed. The following recreates it from the installed exams Rmd examples:
 
 ```r
