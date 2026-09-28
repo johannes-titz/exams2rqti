@@ -74,8 +74,11 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
             },
             match = { values <- args(); identical(values[[1L]], values[[2L]]) },
             gt = { values <- args(); values[[1L]] > values[[2L]] },
+            gte = { values <- args(); values[[1L]] >= values[[2L]] },
             lt = { values <- args(); values[[1L]] < values[[2L]] },
+            lte = { values <- args(); values[[1L]] <= values[[2L]] },
             sum = sum(unlist(args())),
+            multiple = unlist(args()),
             mapResponse = {
                 mapping <- xml2::xml_find_first(doc, paste0(
                     "/assessmentItem/responseDeclaration[@identifier='", identifier,

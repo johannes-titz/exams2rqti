@@ -5,15 +5,39 @@ uploaded as a new test with `access = 1` (resource owners only):
 
 [Open the test in OPAL](https://bildungsportal.sachsen.de/opal/auth/RepositoryEntry/56358502401)
 
+The same resource now contains a **39-item Rmd-only review subset**. All
+item titles include the source filename, such as `[boxhist2.Rmd]`. Rnw sources
+are excluded from OPAL review. The six Rmd items using extracted CSS remain
+temporarily omitted: `automaton.Rmd`, `flags.Rmd`, `fruit.Rmd`, `fruit2.Rmd`,
+`logic.Rmd`, and `vowels.Rmd`. There were no separate
+CSS duplicates in the full package; these were corrected versions of the source
+items themselves. The complete validated corpus remains unchanged locally.
+The OPAL resource's original display name may still refer to 91 items.
+
+To reproduce the review subset, load the package and source
+`inst/examples/build-opal-review.R`, then run
+`buildOpalReview("/tmp/exams-full-validation-final", "/tmp/exams-opal-review-rmd")`.
+The builder verifies that retained item XML changes only in its title, checks
+manifest files and validates the assessment XML. `omit_css = FALSE` includes
+the CSS-corrected items; `formats = c("Rmd", "Rnw")` includes both source formats.
+The automated corpus validation continues to cover both formats.
+
 Upload and resource read-back both returned HTTP 200; the resource type is
 `FileResource.TEST`. This establishes successful API import, not successful
 ONYX execution. The following checks remain to be performed in OPAL/ONYX.
+The completed package-level checks and the verbatim-whitespace diagnosis are
+recorded in `notes/opal-static-audit.md`.
+
+On 2026-09-28 the resource was replaced after rqti commit `0ef522c6` fixed XML
+pretty-printing inside `pre` elements while retaining readable formatting
+elsewhere. OPAL returned HTTP 200, and downloading the resource again produced
+the same MD5 as the validated local ZIP:
+`8f873ee9f3d0941515228feb94fd01d9` (455237 bytes).
 
 ## 1. Import and display: every item
 
-- Open the resource preview and confirm all 91 items are present. The package
-  contains 20 single-choice, 20 multiple-choice, 18 numeric, 6 string and 27
-  cloze items. Rmd and Rnw versions are separate items.
+- Open the resource preview and confirm all 39 review items are present:
+  7 single-choice, 9 multiple-choice, 8 numeric, 3 string and 12 cloze items.
 - Visit every item, checking question text, response controls, images, tables,
   formulas and CSS. Look for clipped content, missing controls and visible raw
   HTML/LaTeX. Test attachment links where present.
@@ -41,12 +65,12 @@ and exported XML supply the expected answers and points.
 | Numeric verbatim | Full-credit and partial-credit alternatives; tolerance edges; matching conditional feedback |
 
 Useful starting points are `swisscapital`, `switzerland`, `confint`, `confint2`,
-`confint3`, and `tstat_verbatim.Rnw`. For each, use the seed-0 rendered metadata
+and `confint3` (all Rmd). For each, use the seed-0 rendered metadata
 to select responses; do not assume answer order matches another rendering.
 
-## 3. Human grading: six items in this package
+## 3. Human grading: three items in this package
 
-The Rmd and Rnw versions of `essayreg`, `essayreg2` and `lm3` contain manual
+The Rmd versions of `essayreg`, `essayreg2` and `lm3` contain manual
 components. Submit an essay/file as applicable, save and finish the attempt,
 then use the grading interface to assess the submission.
 
@@ -64,7 +88,7 @@ Export the attempt results and compare response values and item scores with
 expectations. A correct-looking summary alone is insufficient: it can hide an
 incorrect component score. Repeat any failing case as a small isolated test,
 fix the translator, and add a regression test. Once seed 0 passes, repeat with
-the already built seed-17 package to exercise different generated values.
+a review package built with `seed = 17` to exercise different generated values.
 
 ## API compatibility found during upload
 
