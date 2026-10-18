@@ -1,5 +1,7 @@
 # exams2rqti 0.1.0
 
+* Accept multiple sources in `examsRmd2RqtiObject()`, returning a named list
+  through the existing batch renderer while preserving the single-item return.
 * Expand translation to numeric, exact text, and mixed cloze exercises, including
   manual essay/upload responses and numeric Moodle verbatim partial credit.
 * Preserve all-or-nothing numeric vectors, component weights, absolute tolerance,

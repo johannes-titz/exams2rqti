@@ -44,6 +44,41 @@ test_that("batch rendering draws successive variants and uses unique identifiers
                      lapply(again, function(x) x@choices))
 })
 
+test_that("the file converter accepts several sources through the batch renderer", {
+    skip_if_not(rmarkdown::pandoc_available(), "Pandoc is required for rendering")
+    file <- file.path(withr::local_tempdir(), "choice.Rmd")
+    source <- readLines(test_path("fixtures", "choice.Rmd"))
+    source <- sub("Select the even numbers.",
+        '<span style="color:red">Select the even numbers.</span>', source, fixed = TRUE)
+    writeLines(source, file)
+    files <- rep(file, 3)
+    withr::local_seed(42)
+    before <- .Random.seed
+    items <- examsRmd2RqtiObject(files, seed = 7, points = 4,
+        eval = list(rule = "all"), shuffle = TRUE, prepare_html = TRUE)
+    expect_identical(.Random.seed, before)
+    expected <- translateExercises(files, seed = 7, points = 4,
+        eval = list(rule = "all"), shuffle = TRUE, prepare_html = TRUE)
+    expect_identical(names(items), c("choice", "choice_1", "choice_2"))
+    expect_identical(lapply(items, function(x) as.character(item_xml(x))),
+                     lapply(expected, function(x) as.character(item_xml(x))))
+    expect_gt(length(unique(lapply(items, function(x) x@choices))), 1)
+    for (item in items) {
+        expect_equal(sum(item@points[item@points > 0]), 4)
+        expect_true(item@shuffle)
+        expect_true(any(nzchar(item@css)))
+        expect_length(xml2::xml_find_all(item_xml(item), "//*[@style]"), 0)
+        expect_valid_qti(item)
+    }
+    single <- examsRmd2RqtiObject(files[[1L]], identifier = "custom", title = "Custom")
+    expect_s4_class(single, "AssessmentItem")
+    expect_identical(single@identifier, "custom")
+    expect_identical(single@title, "Custom")
+    expect_length(translateExercises(files[[1L]]), 1L)
+    expect_error(examsRmd2RqtiObject(files, identifier = "custom"), "single source")
+    expect_error(examsRmd2RqtiObject(files, title = "Custom"), "single source")
+})
+
 test_that("plots, tables, mathematics and full solutions survive rendering", {
     skip_if_not(rmarkdown::pandoc_available(), "Pandoc is required for rendering")
     for (resolution in c(72, 120)) {

@@ -32,7 +32,8 @@ translateExercises(
 )
 }
 \arguments{
-\item{path_rmd}{One exams Rmd or Rnw source, or a filename available in exams.}
+\item{path_rmd}{Character vector of exams Rmd/Rnw sources, or filenames
+available in exams. One source returns one item; several return a named list.}
 
 \item{seed}{Optional non-negative integer seed. A supplied seed is applied
 once per batch and the caller's random-number state is restored. \code{NULL}
@@ -66,7 +67,8 @@ and omit HTML5 download hints. Default \code{FALSE} preserves original HTML.}
 one item, in input order. Repeated sources generate successive variants.}
 }
 \value{
-\code{examsRmd2RqtiObject()} returns one rqti item;
+\code{examsRmd2RqtiObject()} returns one rqti item for one source, or a
+named list for several sources;
 \code{translateExercises()} returns a named list of rqti items.
 }
 \description{
@@ -75,5 +77,8 @@ Translate exams sources into rqti items
 \details{
 The grading, points and delivery-shuffle overrides apply to every item in a
 batch. Batch identifiers are sanitized file stems, made unique with suffixes.
+\code{identifier} and \code{title} overrides are only supported for a single source.
+\code{translateExercises()} provides the same batch conversion with a list return
+even for one source.
 No files are exported and no browser is opened; use rqti functions explicitly.
 }
