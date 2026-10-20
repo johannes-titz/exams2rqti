@@ -20,11 +20,17 @@ readExamsExercise <- function(path_rmd, seed = 0, converter = "pandoc-mathjax",
     renderExamsExercises(path_rmd, seed, converter, resolution, quiet)[[1L]]
 }
 
-renderExamsExercises <- function(files, seed, converter, resolution, quiet) {
-    if (!is.character(files) || !length(files) || anyNA(files) || any(!nzchar(files))) {
+renderExamsExercises <- function(files, seed, converter, resolution, quiet,
+                                n = 1L, nsamp = NULL, edir = NULL,
+                                keep_versions = FALSE) {
+    sources <- unlist(files, use.names = FALSE)
+    if (!is.character(sources) || !length(sources) || anyNA(sources) || any(!nzchar(sources))) {
         stop("files must be a non-empty character vector of exercise sources.", call. = FALSE)
     }
-    if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1L || is.na(seed) ||
+    if (is.matrix(seed) && !keep_versions) {
+        stop("seed must be NULL or one non-negative integer.", call. = FALSE)
+    }
+    if (!is.null(seed) && !is.matrix(seed) && (!is.numeric(seed) || length(seed) != 1L || is.na(seed) ||
         !is.finite(seed) || seed < 0 || seed > .Machine$integer.max || seed != floor(seed))) {
         stop("seed must be NULL or one non-negative integer.", call. = FALSE)
     }
@@ -42,14 +48,15 @@ renderExamsExercises <- function(files, seed, converter, resolution, quiet) {
     # Sweave evaluates Rnw chunks in the global environment and does not honor
     # xweave's envir argument. Make exams helpers available for that engine,
     # restoring the caller's search path when rendering finishes.
-    if (any(tolower(tools::file_ext(files)) == "rnw") &&
+    if (any(tolower(tools::file_ext(sources)) == "rnw") &&
         !"package:exams" %in% search()) {
         suppressPackageStartupMessages(base::library("exams", character.only = TRUE))
         on.exit(detach("package:exams", character.only = TRUE), add = TRUE)
     }
     run <- function() {
         exams::xexams(
-            files,
+            files, n = n, nsamp = nsamp, edir = edir,
+            seed = if (is.matrix(seed)) seed else NULL,
             driver = list(
                 sweave = list(quiet = quiet, pdf = FALSE, png = TRUE,
                               envir = new.env(parent = asNamespace("exams")),
@@ -60,14 +67,18 @@ renderExamsExercises <- function(files, seed, converter, resolution, quiet) {
                 write = NULL),
             dir = work, tdir = file.path(work, "weave"),
             sdir = file.path(work, "assets")
-        )[[1L]]
+        )
     }
-    result <- if (is.null(seed)) run() else withr::with_seed(seed, run())
-    if (any(vapply(result, function(x) length(x$supplements) > 0L, logical(1)))) {
+    if (!is.null(seed)) withr::local_preserve_seed()
+    result <- if (is.null(seed) || is.matrix(seed)) run() else withr::with_seed(seed, run())
+    rendered <- unlist(result, recursive = FALSE)
+    if (any(vapply(rendered, function(x) length(x$supplements) > 0L, logical(1)))) {
         stop("Unembedded supplements remain after HTML conversion; these assets ",
-             "are outside the supported embedded-asset workflow.", call. = FALSE)
+             "are outside the supported embedded-asset workflow: ",
+             paste(unique(unlist(lapply(rendered, `[[`, "supplements"))), collapse = ", "),
+             call. = FALSE)
     }
-    result
+    if (keep_versions) result else result[[1L]]
 }
 
 #' Translate exams sources into rqti items

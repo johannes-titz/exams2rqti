@@ -1,5 +1,7 @@
 # exams2rqti 0.1.0
 
+* Add an rqti-backed `exams2qti21()` export workflow with independent pools or
+  complete-exam selection, exams source sampling and optional rqti test settings.
 * Remove the redundant public `translateExercises()` interface; use
   `examsRmd2RqtiObject()` for single or batch conversion.
 

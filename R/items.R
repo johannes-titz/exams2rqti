@@ -30,7 +30,7 @@
 #' for an incorrect answer, and awards zero for an omission. Single-choice
 #' scoring does not depend on `partial` or `rule`.
 #' The same `eval` argument is available in [examsRmd2RqtiObject()],
-#' and [buildExams2RqtiAssessment()]. It applies to every
+#' [exams2qti21()] and [buildExams2RqtiAssessment()]. It applies to every
 #' item in a batch; use separate calls for different policies.
 #' Numeric responses use absolute tolerance with inclusive boundaries. Numeric
 #' vectors require all entries to be correct; cloze components receive their
