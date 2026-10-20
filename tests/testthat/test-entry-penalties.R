@@ -64,3 +64,16 @@ test_that("numeric verbatim responses preserve partial credit with penalties", {
     expect_equal(score_qti(doc), 0)
     expect_valid_qti(item)
 })
+
+test_that("numeric verbatim accepts negative answer credits independently of the fallback", {
+    x <- entry_exercise("cloze", list(":NUMERICAL:=5:0.01~%-50%4:0.01"), clozetype = "verbatim")
+    item <- asRqtiItem(x, points = 2)
+    doc <- item_xml(item)
+    wrong <- score_qti(doc, responses = list(part1_RESPONSE = 4), outcomes = TRUE)
+    expect_equal(wrong$part1_SCORE_RESPONSE, -1)
+    expect_equal(wrong$part1_MINSCORE_RESPONSE, -1)
+    expect_equal(wrong$SCORE, 0)
+    expect_equal(score_qti(doc, responses = list(part1_RESPONSE = 3)), 0)
+    expect_equal(score_qti(doc, responses = list(part1_RESPONSE = 5)), 2)
+    expect_valid_qti(item)
+})

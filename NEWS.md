@@ -1,5 +1,8 @@
 # exams2rqti 0.1.0
 
+* Accept negative percentage credits in numeric Moodle verbatim alternatives
+  while preserving the configured score for unmatched responses.
+
 * Add `exams2opal()` and `exams2openolat()` as thin wrappers around the shared
   QTI exporter, selecting rqti's platform test constructors.
 * Translate numeric and text penalties through rqti's gap `incorrect` setting,

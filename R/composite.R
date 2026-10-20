@@ -177,7 +177,11 @@ methods::setMethod("createResponseProcessing", "ExamsVerbatimNumeric", function(
 #' @rdname ExamsComposite
 #' @export
 methods::setMethod("createOutcomeDeclaration", "ExamsVerbatimNumeric", function(object) {
-    htmltools::tagList(methods::callNextMethod(), qoutcome("FEEDBACK_RESPONSE", "none", "identifier"))
+    declarations <- object
+    declarations@incorrect <- min(object@incorrect,
+        object@points * vapply(object@alternatives, function(x) x$credit, numeric(1)))
+    htmltools::tagList(methods::callNextMethod(object = declarations),
+        qoutcome("FEEDBACK_RESPONSE", "none", "identifier"))
 })
 
 #' @rdname ExamsComposite

@@ -7,16 +7,16 @@ parseVerbatimNumeric <- function(solution) {
     alternatives <- strsplit(answer, "~", fixed = TRUE)[[1]]
     lapply(alternatives, function(text) {
         credit <- if (startsWith(text, "=")) 1 else {
-            prefix <- regmatches(text, regexpr("^%[0-9.]+%", text))
+            prefix <- regmatches(text, regexpr("^%[+-]?[0-9.]+%", text))
             if (!length(prefix)) stop("Unsupported verbatim credit syntax.", call. = FALSE)
             as.numeric(gsub("%", "", prefix, fixed = TRUE)) / 100
         }
-        text <- sub("^(=|%[0-9.]+%)", "", text)
+        text <- sub("^(=|%[+-]?[0-9.]+%)", "", text)
         feedback <- if (grepl("#", text, fixed = TRUE)) sub("^[^#]*#", "", text) else ""
         numeric <- strsplit(sub("#.*$", "", text), ":", fixed = TRUE)[[1]]
         values <- suppressWarnings(as.numeric(numeric))
         if (!length(values) %in% 1:2 || anyNA(values) || any(!is.finite(values)) ||
-            !is.finite(credit) || credit < 0 || credit > 1 ||
+            !is.finite(credit) || credit < -1 || credit > 1 ||
             (length(values) == 2L && values[2] < 0)) {
             stop("Unsupported verbatim numeric answer/tolerance.", call. = FALSE)
         }
