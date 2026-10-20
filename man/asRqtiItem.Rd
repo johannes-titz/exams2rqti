@@ -44,11 +44,21 @@ object extending rqti classes.
 Convert a rendered exams exercise to an rqti item
 }
 \details{
-Multiple-choice conversion supports partial credit, a zero score floor and
-rules \code{false2}, \code{false}, \code{true}, and \code{all}. Single-choice conversion supports
-standard scoring and rqti's penalty of \verb{-points / (number of choices - 1)}.
-Other policies error rather than silently changing marks. In particular,
-rqti currently rewrites zero-valued distractors, so rule \code{none} is unsupported.
+Choice conversion supports all \code{\link[exams:exams_eval]{exams::exams_eval()}} combinations of
+\code{partial}, \code{negative}, and the five \code{rule} values, using rqti's scoring
+specifications where the legacy mapping cannot represent the policy.
+Single-choice penalties can have any finite magnitude. Multiple-choice
+policies include zero-weight distractors, exact-match scoring, and negative
+score floors. No approximate scoring is substituted.
+Pass these settings through \code{eval}, for example
+\code{eval = list(partial = TRUE, negative = 0.25, rule = "none")}.
+For a single-choice item, \code{eval = list(negative = 0.3)} awards the full
+item points for a correct answer, deducts 30 percent of the item points
+for an incorrect answer, and awards zero for an omission. Single-choice
+scoring does not depend on \code{partial} or \code{rule}.
+The same \code{eval} argument is available in \code{\link[=examsRmd2RqtiObject]{examsRmd2RqtiObject()}},
+and \code{\link[=buildExams2RqtiAssessment]{buildExams2RqtiAssessment()}}. It applies to every
+item in a batch; use separate calls for different policies.
 Numeric responses use absolute tolerance with inclusive boundaries. Numeric
 vectors require all entries to be correct; cloze components receive their
 own weights (equal shares of total points unless component points are given).

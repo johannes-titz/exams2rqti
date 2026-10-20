@@ -117,7 +117,12 @@ methods::setMethod("createResponseProcessing", "ExamsComposite", function(object
                       qtag("responseElse", qset("SCORE", qtag("null"))))
     }
     penalty <- any(vapply(object@parts, function(part) {
-        methods::is(part, "SingleChoice") && identical(part@scoring_scheme, "penalty")
+        if (!methods::is(part, "Choice")) return(FALSE)
+        declarations <- xml2::read_xml(paste0("<root>",
+            as.character(rqti::createOutcomeDeclaration(part)), "</root>"))
+        minimum <- xml2::xml_text(xml2::xml_find_first(declarations,
+            "//outcomeDeclaration[@identifier='MINSCORE']/defaultValue/value"))
+        !is.na(minimum) && as.numeric(minimum) < 0
     }, logical(1)))
     floor <- if (penalty) qtag("responseCondition", qtag("responseIf",
         qtag("lt", qvar("SCORE"), qvalue(0)), qset("SCORE", qvalue(0))))

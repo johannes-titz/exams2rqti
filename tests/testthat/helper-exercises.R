@@ -62,6 +62,8 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
             isNull = length(eval_node(children[[1L]])) == 0L,
             not = !eval_node(children[[1L]]),
             and = all(unlist(args())),
+            or = any(unlist(args())),
+            containerSize = length(eval_node(children[[1L]])),
             equal = {
                 values <- args()
                 if (any(lengths(values) == 0L)) FALSE else {
@@ -72,7 +74,7 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
                     a >= b - tolerance[1] && a <= b + tail(tolerance, 1)
                 }
             },
-            match = { values <- args(); identical(values[[1L]], values[[2L]]) },
+            match = { values <- args(); setequal(values[[1L]], values[[2L]]) },
             gt = { values <- args(); values[[1L]] > values[[2L]] },
             gte = { values <- args(); values[[1L]] >= values[[2L]] },
             lt = { values <- args(); values[[1L]] < values[[2L]] },

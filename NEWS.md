@@ -14,8 +14,10 @@
   content and scoring, stylesheet packaging, and standard QTI validation.
 * Package the original choice translation prototype with documented entry points,
   explicit examples and automated tests; remove rendering at package load time.
-* Preserve exams' default multiple-choice grading and supported alternative
-  partial-credit rules. Reject unsupported policies rather than approximating.
+* Preserve all five exams choice weighting rules, partial/exact-match scoring
+  and finite negative-score settings through the existing `eval` argument.
+  Use rqti's focused scoring helpers where the legacy mapping is insufficient;
+  unsupported non-choice policies still error rather than approximate.
 * Cap the QTI essay display-width hint at 100 characters so large exams
   `exmaxchars` limits do not produce unusably wide textareas in ONYX.
 * Retain general solutions and pair answer explanations with their choice text.
@@ -24,3 +26,6 @@
 * Make delivery shuffling opt-in and seed once per batch, restoring caller RNG.
 * Check generated scoring against exams, validate QTI, and test representative
   content and randomized exercises.
+
+* Retain the existing cloze item-level zero floor when choice components permit
+  negative scores.

@@ -37,14 +37,23 @@ rqtiGradingSetup <- function(x, points, eval = NULL) {
         if (isTRUE(all.equal(evaluator$negative, penalty))) {
             return(list(scoring_scheme = "penalty"))
         }
-        stop("Unsupported single-choice grading: negative must be FALSE/0 or ",
-             "a penalty of magnitude 1 / (number of choices - 1).", call. = FALSE)
+        return(list(scoring_scheme = extendedRqtiScoring(policy, x$metainfo$type)))
     }
     if (!policy$partial || evaluator$negative != 0 || policy$rule == "none") {
-        stop("Unsupported multiple-choice grading: requires partial = TRUE, ",
-             "negative = FALSE/0, and rule = 'false2', 'false', 'true', or 'all'. ",
-             "No approximate scoring is substituted.", call. = FALSE)
+        return(list(points = points * ifelse(solution, 1/sum(solution), 0),
+                    scoring_scheme = extendedRqtiScoring(policy, x$metainfo$type)))
     }
     weights <- evaluator$pointvec(solution, type = "mchoice")
     list(points = points * ifelse(solution, weights[["pos"]], weights[["neg"]]))
+}
+
+
+extendedRqtiScoring <- function(policy, type) {
+    helper <- if (type == "schoice") "single_choice_scoring" else "multiple_choice_scoring"
+    if (!helper %in% getNamespaceExports("rqti")) {
+        stop("This grading policy requires rqti's ", helper, "() interface; upgrade rqti.",
+             call. = FALSE)
+    }
+    settings <- if (type == "schoice") list(negative = policy$negative) else policy
+    do.call(getExportedValue("rqti", helper), c(list(method = "exams"), settings))
 }

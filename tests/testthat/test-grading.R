@@ -22,7 +22,7 @@ test_that("multiple-choice XML agrees with exams for every response combination"
         for (n_correct in unique(c(1L, k - 1L, k))) {
             solution <- rev(seq_len(k) <= n_correct)
             for (points in c(0.5, 3.5)) {
-                for (rule in c("false2", "false", "true", "all")) {
+                for (rule in c("false2", "false", "true", "all", "none")) {
                     policy <- list(partial = TRUE, negative = FALSE, rule = rule)
                     x <- choice_exercise(solution = solution)
                     item <- asRqtiItem(x, points = points, eval = policy)
@@ -71,27 +71,74 @@ test_that("single-choice XML preserves standard and exactly representable penalt
     }
 })
 
-test_that("unsupported scoring fails instead of approximating", {
-    x <- choice_exercise()
-    for (policy in list(list(partial = FALSE), list(negative = TRUE),
-                        list(negative = -0.25), list(rule = "none"),
-                        list(partial = FALSE, rule = "false", negative = TRUE))) {
-        expect_error(asRqtiItem(x, eval = policy), "Unsupported multiple-choice grading")
+test_that("previously unsupported choice grading is translated exactly", {
+    for (type in c("schoice", "mchoice")) {
+        solution <- c(TRUE, FALSE, type == "mchoice")
+        answers <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), 3)))
+        if (type == "schoice") answers <- answers[rowSums(answers) <= 1, , drop = FALSE]
+        for (partial in c(TRUE, FALSE)) for (negative in c(FALSE, TRUE, -0.25, -2)) {
+            for (rule in c("false2", "false", "true", "all", "none")) {
+                policy <- list(partial = partial, negative = negative, rule = rule)
+                item <- asRqtiItem(choice_exercise(type, solution), points = 2.5, eval = policy)
+                doc <- item_xml(item)
+                ids <- item@choice_identifiers
+                actual <- apply(answers, 1, function(x) score_qti(doc, ids[x]))
+                evaluator <- do.call(exams::exams_eval, policy)
+                expected <- apply(answers, 1, function(x) {
+                    2.5 * evaluator$pointsum(solution, x, type = type)
+                })
+                expect_equal(actual, expected, tolerance = 1e-10,
+                    info = paste(type, partial, negative, rule))
+                expect_equal(score_qti(doc), 0)
+            }
+        }
     }
-    x <- choice_exercise("schoice", c(TRUE, FALSE, FALSE))
-    expect_error(asRqtiItem(x, eval = list(negative = TRUE)), "Unsupported single-choice grading")
-    expect_error(asRqtiItem(x, eval = list(negative = 0.2)), "Unsupported single-choice grading")
 })
 
 test_that("grading overrides follow the documented precedence and validate inputs", {
     x <- choice_exercise()
     x$metainfo$eval <- list(rule = "all", negative = TRUE)
-    expect_error(asRqtiItem(x), "Unsupported multiple-choice")
+    expect_s4_class(asRqtiItem(x), "ExamsMultipleChoice")
     item <- asRqtiItem(x, eval = list(negative = FALSE))
     expect_equal(item@points, c(0.5, -1, 0.5))
     for (bad in list(TRUE, list(TRUE), list(partial = NA), list(rule = "bogus"),
                      list(negative = Inf), list(negative = c(0, 1)), list(rule = NULL),
                      list(typo = TRUE), list(partial = 1))) {
         expect_error(asRqtiItem(choice_exercise(), eval = bad))
+    }
+})
+
+test_that("batch conversion forwards every exams choice rule and custom penalties", {
+    rendered <- list(
+        choice_exercise("schoice", c(TRUE, FALSE, FALSE, FALSE)),
+        choice_exercise("mchoice", c(TRUE, FALSE, TRUE, FALSE)))
+    local_mocked_bindings(renderExamsExercises = function(...) rendered)
+    patterns <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), 4)))
+    for (partial in c(TRUE, FALSE)) {
+        for (rule in c("false2", "false", "true", "all", "none")) {
+            policy <- list(partial = partial, negative = 0.3, rule = rule)
+            items <- examsRmd2RqtiObject(c("single.Rmd", "multiple.Rmd"),
+                points = 1, eval = policy)
+            evaluator <- do.call(exams::exams_eval, policy)
+            for (i in seq_along(items)) {
+                type <- rendered[[i]]$metainfo$type
+                answers <- if (type == "schoice") {
+                    patterns[rowSums(patterns) <= 1, , drop = FALSE]
+                } else patterns
+                doc <- item_xml(items[[i]])
+                actual <- apply(answers, 1, function(answer) {
+                    score_qti(doc, items[[i]]@choice_identifiers[answer])
+                })
+                expected <- apply(answers, 1, function(answer) {
+                    evaluator$pointsum(rendered[[i]]$metainfo$solution,
+                        answer, type = type)
+                })
+                expect_equal(actual, expected, info = paste(type, partial, rule))
+                if (type == "schoice") {
+                    expect_equal(mean(actual[rowSums(answers) == 1]), 0.025)
+                    expect_equal(score_qti(doc), 0)
+                }
+            }
+        }
     }
 })

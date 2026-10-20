@@ -17,11 +17,21 @@
 #' @return An `ExamsSingleChoice`, `ExamsMultipleChoice`, or `ExamsComposite`
 #'   object extending rqti classes.
 #' @details
-#' Multiple-choice conversion supports partial credit, a zero score floor and
-#' rules `false2`, `false`, `true`, and `all`. Single-choice conversion supports
-#' standard scoring and rqti's penalty of `-points / (number of choices - 1)`.
-#' Other policies error rather than silently changing marks. In particular,
-#' rqti currently rewrites zero-valued distractors, so rule `none` is unsupported.
+#' Choice conversion supports all [exams::exams_eval()] combinations of
+#' `partial`, `negative`, and the five `rule` values, using rqti's scoring
+#' specifications where the legacy mapping cannot represent the policy.
+#' Single-choice penalties can have any finite magnitude. Multiple-choice
+#' policies include zero-weight distractors, exact-match scoring, and negative
+#' score floors. No approximate scoring is substituted.
+#' Pass these settings through `eval`, for example
+#' `eval = list(partial = TRUE, negative = 0.25, rule = "none")`.
+#' For a single-choice item, `eval = list(negative = 0.3)` awards the full
+#' item points for a correct answer, deducts 30 percent of the item points
+#' for an incorrect answer, and awards zero for an omission. Single-choice
+#' scoring does not depend on `partial` or `rule`.
+#' The same `eval` argument is available in [examsRmd2RqtiObject()],
+#' and [buildExams2RqtiAssessment()]. It applies to every
+#' item in a batch; use separate calls for different policies.
 #' Numeric responses use absolute tolerance with inclusive boundaries. Numeric
 #' vectors require all entries to be correct; cloze components receive their
 #' own weights (equal shares of total points unless component points are given).
@@ -123,6 +133,7 @@ asRqtiItem.schoice <- function(x, path_rmd = NULL, identifier = NULL, title = NU
 asRqtiItem.mchoice <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
                               points = NULL, eval = NULL, shuffle = FALSE) {
     args <- baseRqtiArgs(x, path_rmd, identifier, title, points, shuffle)
-    args$points <- rqtiGradingSetup(x, args$points, eval)$points
+    setup <- rqtiGradingSetup(x, args$points, eval)
+    args[names(setup)] <- setup
     methods::new("ExamsMultipleChoice", do.call(rqti::multipleChoice, args))
 }

@@ -128,3 +128,28 @@ test_that("QTI HTML preparation preserves assets and style declarations", {
     dotted <- prepareQtiHtml(asRqtiItem(x, identifier = "item.with.dots"))
     expect_match(dotted@css, "item\\.with\\.dots", fixed = TRUE)
 })
+
+test_that("extended choice policies remain exact within cloze components", {
+    solutions <- list(c(TRUE,FALSE,TRUE),c(TRUE,FALSE,FALSE))
+    x <- entry_exercise("cloze",solutions,clozetype=c("mchoice","schoice"))
+    x$questionlist <- rep(c("A","B","C"),2)
+    patterns <- as.matrix(expand.grid(rep(list(c(FALSE,TRUE)),3)))
+    for (partial in c(FALSE,TRUE)) for (rule in c("false2","false","true","all","none")) {
+        policy <- list(partial=partial,negative=-0.2,rule=rule)
+        item <- asRqtiItem(x,points=4,eval=policy)
+        expect_valid_qti(item)
+        doc <- item_xml(item)
+        evaluator <- do.call(exams::exams_eval,policy)
+        for (i in seq_len(nrow(patterns))) for (j in 1:3) {
+            a <- patterns[i,];b <- seq_len(3)==j
+            response <- list(part1_RESPONSE=paste0("choice_",seq_len(3))[a],
+                             part2_RESPONSE=paste0("choice_",j))
+            expected1 <- 2*evaluator$pointsum(solutions[[1]],a,type="mchoice")
+            expected2 <- 2*evaluator$pointsum(solutions[[2]],b,type="schoice")
+            outcomes <- score_qti(doc,responses=response,outcomes=TRUE)
+            expect_equal(outcomes$part1_SCORE,expected1,tolerance=1e-10)
+            expect_equal(outcomes$part2_SCORE,expected2,tolerance=1e-10)
+            expect_equal(outcomes$SCORE,max(0,expected1+expected2),tolerance=1e-10)
+        }
+    }
+})
