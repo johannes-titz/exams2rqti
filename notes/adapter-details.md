@@ -255,8 +255,9 @@ consistent shared data in the exams sources, for example with a suitable seed
 matrix. The exporter preserves the generated sets; it does not generate shared
 data automatically. With `n = 1`, either structure delivers the same items.
 
-All R/exams choice-scoring settings are translated through rqti. The adapter currently rejects negative-score settings for numeric, text and
-verbatim responses. This is an adapter limitation, not a restriction of QTI.
+R/exams choice, numeric and exact-text penalties are translated through rqti.
+Incorrect nonempty numeric/text responses receive `points * eval$negative`
+(after exams normalizes the penalty sign); omissions receive zero.
 
 For integration into R/exams itself, `asRqtiItem()` could become an internal
 writer helper. R/exams would then call the rqti backend after its HTML transform.
@@ -413,12 +414,11 @@ Choice policies are checked against `exams::exams_eval()` by executing the
 generated QTI for every answer pattern in the regression fixtures. Extended
 policies require rqti's separate `single_choice_scoring()` and
 `multiple_choice_scoring()` interfaces. Numeric/text responses
-currently reject negative-score policies in `makeExamPart()`. The rqti gap
-constructors used here award full points or zero; the adapter has not implemented
-the response processing for an incorrect-answer penalty. QTI can express it.
-For example, `points = 2, eval = list(negative = 0.25)` could award 2 for a
-correct numeric/text response, -0.5 for an incorrect response, and zero for an
-omission. The current adapter stops instead of emitting those rules.
+use rqti gap constructors with an `incorrect` score in points.
+For example, `points = 2, eval = list(negative = 0.25)` awards 2 for a
+correct numeric/text response, -0.5 for an incorrect nonempty response, and zero
+for an omission. Numeric vectors apply this once to the complete response,
+rather than awarding partial credit for correct entries.
 Cloze retains its existing aggregation policy: component scores are added, with
 a zero floor for the complete item when a choice component permits penalties.
 

@@ -1,3 +1,8 @@
+entry_exercise <- function(type = "num", solution = 12, ...) {
+    list(question = "<p>Give your answer.</p>", solution = "<p>A full explanation.</p>",
+         metainfo = c(list(type = type, solution = solution, markup = "html", file = "entry"), list(...)))
+}
+
 choice_exercise <- function(type = "mchoice", solution = c(TRUE, FALSE, TRUE),
                             points = NULL) {
     list(question = "<p>Select the correct choices.</p>",
@@ -60,6 +65,10 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
                 } else value
             },
             isNull = length(eval_node(children[[1L]])) == 0L,
+            patternMatch = {
+                value <- eval_node(children[[1L]])
+                length(value) > 0L && grepl(xml2::xml_attr(node, "pattern"), value, perl = TRUE)
+            },
             not = !eval_node(children[[1L]]),
             and = all(unlist(args())),
             or = any(unlist(args())),

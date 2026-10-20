@@ -1,5 +1,9 @@
 # exams2rqti 0.1.0
 
+* Translate numeric and text penalties through rqti's gap `incorrect` setting,
+  including all-or-nothing numeric vectors and numeric verbatim alternatives.
+  Omissions remain zero and mixed cloze totals retain their existing zero floor.
+
 * Add an rqti-backed `exams2qti21()` export workflow with independent pools or
   complete-exam selection, exams source sampling and optional rqti test settings.
 * Remove the redundant public `translateExercises()` interface; use

@@ -1,8 +1,3 @@
-entry_exercise <- function(type = "num", solution = 12, ...) {
-    list(question = "<p>Give your answer.</p>", solution = "<p>A full explanation.</p>",
-         metainfo = c(list(type = type, solution = solution, markup = "html", file = "entry"), list(...)))
-}
-
 test_that("numeric answers retain tolerance, points and boundary scoring", {
     x <- entry_exercise(tolerance = 0.25)
     item <- asRqtiItem(x, points = 3)
@@ -14,7 +9,8 @@ test_that("numeric answers retain tolerance, points and boundary scoring", {
     }
     expect_equal(score_qti(doc), 0)
     expect_error(asRqtiItem(entry_exercise(tolerance = -1)), "tolerance")
-    expect_error(asRqtiItem(x, eval = list(negative = TRUE)), "Negative scoring")
+    penalized <- item_xml(asRqtiItem(x, points = 3, eval = list(negative = TRUE)))
+    expect_equal(score_qti(penalized, responses = list(part1_RESPONSE = 11)), -3)
 })
 
 test_that("numeric vectors require all responses to be correct", {

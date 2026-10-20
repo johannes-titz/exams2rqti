@@ -35,6 +35,11 @@
 #' Numeric responses use absolute tolerance with inclusive boundaries. Numeric
 #' vectors require all entries to be correct; cloze components receive their
 #' own weights (equal shares of total points unless component points are given).
+#' Numeric and text penalties use the same `eval$negative` fraction of the
+#' item/component maximum. Incorrect nonempty responses receive the penalty;
+#' omissions receive zero. A numeric vector is graded as one all-or-nothing
+#' response, with one penalty when complete and incorrect. Cloze totals retain
+#' their zero floor even when individual components have negative scores.
 #' Text matching is case-sensitive. Cloze supports numeric, string, choice,
 #' essay and file responses and the numeric subset of Moodle verbatim syntax.
 #' Essay/upload responses require human grading: `AUTO_SCORE` holds the automatic

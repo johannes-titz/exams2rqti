@@ -26,9 +26,10 @@ parseVerbatimNumeric <- function(solution) {
 }
 
 makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuffle, metadata) {
+    incorrect <- 0
     if (type %in% c("num", "string", "verbatim")) {
         policy <- do.call(exams::exams_eval, exerciseEval(list(metainfo = metadata), eval))
-        if (policy$negative != 0) stop("Negative scoring is not supported for entry responses.", call. = FALSE)
+        incorrect <- points * policy$negative
     }
     if (type == "num") {
         if (!is.numeric(solution) || length(solution) != 1L || !is.finite(solution)) {
@@ -38,19 +39,21 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
             stop("Numeric tolerance must be one non-negative finite number.", call. = FALSE)
         }
         return(rqti::numericGap(solution, response_identifier = "RESPONSE", points = points,
-                                tolerance = tolerance, tolerance_type = "absolute"))
+                                tolerance = tolerance, tolerance_type = "absolute",
+                                incorrect = incorrect))
     }
     if (type == "string") {
         scalarText(solution, "String solution")
         return(rqti::textGap(solution, response_identifier = "RESPONSE", points = points,
-                             case_sensitive = TRUE))
+                             case_sensitive = TRUE, incorrect = incorrect))
     }
     if (type == "verbatim") {
         alternatives <- parseVerbatimNumeric(solution)
         full <- which(vapply(alternatives, function(x) x$credit == 1, logical(1)))
         if (!length(full)) stop("Verbatim numeric response needs a full-credit answer.", call. = FALSE)
         gap <- rqti::numericGap(alternatives[[full[1]]]$value,
-            response_identifier = "RESPONSE", points = points, tolerance = alternatives[[full[1]]]$tolerance)
+            response_identifier = "RESPONSE", points = points, tolerance = alternatives[[full[1]]]$tolerance,
+            incorrect = incorrect)
         slots <- lapply(methods::slotNames(gap), function(name) methods::slot(gap, name))
         names(slots) <- methods::slotNames(gap)
         return(do.call(methods::new, c(list(Class = "ExamsVerbatimNumeric", alternatives = alternatives), slots)))

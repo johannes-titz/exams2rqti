@@ -37,6 +37,18 @@ qoutcome <- function(id, value = 0, type = "float", ...) {
          ..., if (!is.null(value)) qtag("defaultValue", qtag("value", value)))
 }
 
+partMinimum <- function(part) {
+    declarations <- xml2::read_xml(paste0("<root>",
+        as.character(rqti::createOutcomeDeclaration(part)), "</root>"))
+    values <- as.numeric(xml2::xml_text(xml2::xml_find_all(declarations,
+        "//outcomeDeclaration[starts-with(@identifier,'MINSCORE')]/defaultValue/value")))
+    if (length(values)) min(values) else 0
+}
+
+compositeMinimum <- function(object) {
+    if (object@source_type == "cloze") 0 else sum(vapply(object@parts, partMinimum, numeric(1)))
+}
+
 # Rename variables at rqti's tag-generation extension point, before export.
 partTags <- function(tags, index) {
     variables <- c("RESPONSE", "SCORE", "MAXSCORE", "MINSCORE", "SCORE_RESPONSE",
@@ -81,7 +93,7 @@ methods::setMethod("createOutcomeDeclaration", "ExamsComposite", function(object
         }
         partTags(rqti::createOutcomeDeclaration(part), i)
     })
-    htmltools::tagList(total, qoutcome("MAXSCORE", object@points), qoutcome("MINSCORE"),
+    htmltools::tagList(total, qoutcome("MAXSCORE", object@points), qoutcome("MINSCORE", compositeMinimum(object)),
         qoutcome("AUTO_SCORE"), qoutcome("MANUAL_GRADING_REQUIRED", tolower(any(object@manual)), "boolean"),
         qoutcome("FEEDBACKMODAL", "modal_feedback", "identifier"), parts)
 })
@@ -107,7 +119,10 @@ methods::setMethod("createResponseProcessing", "ExamsComposite", function(object
         })
         auto_processing <- htmltools::tagList(qset("AUTO_SCORE", qvalue(0)),
             qtag("responseCondition", qtag("responseIf", qtag("and", correct),
-                qset("AUTO_SCORE", qvalue(object@points)))))
+                qset("AUTO_SCORE", qvalue(object@points))),
+                qtag("responseElseIf", qtag("and", lapply(seq_along(score_id), function(i) {
+                    qtag("not", qtag("isNull", qvar(paste0("part", i, "_RESPONSE"))))
+                })), qset("AUTO_SCORE", qvalue(compositeMinimum(object))))))
         total <- qset("SCORE", qvar("AUTO_SCORE"))
     }
     if (any(object@manual)) {
@@ -116,14 +131,7 @@ methods::setMethod("createResponseProcessing", "ExamsComposite", function(object
         total <- qtag("responseCondition", qtag("responseIf", condition, total),
                       qtag("responseElse", qset("SCORE", qtag("null"))))
     }
-    penalty <- any(vapply(object@parts, function(part) {
-        if (!methods::is(part, "Choice")) return(FALSE)
-        declarations <- xml2::read_xml(paste0("<root>",
-            as.character(rqti::createOutcomeDeclaration(part)), "</root>"))
-        minimum <- xml2::xml_text(xml2::xml_find_first(declarations,
-            "//outcomeDeclaration[@identifier='MINSCORE']/defaultValue/value"))
-        !is.na(minimum) && as.numeric(minimum) < 0
-    }, logical(1)))
+    penalty <- object@source_type == "cloze" && any(vapply(object@parts, partMinimum, numeric(1)) < 0)
     floor <- if (penalty) qtag("responseCondition", qtag("responseIf",
         qtag("lt", qvar("SCORE"), qvalue(0)), qset("SCORE", qvalue(0))))
     qtag("responseProcessing", processing, auto_processing, total, floor)
@@ -159,7 +167,10 @@ methods::setMethod("createResponseProcessing", "ExamsVerbatimNumeric", function(
              qset("SCORE_RESPONSE", qvalue(object@points * alternative$credit)),
              qset("FEEDBACK_RESPONSE", qvalue(paste0("alternative_", i), "identifier")))
     })
+    branches <- c(branches, list(qtag("responseElseIf", qtag("not", qtag("isNull", qvar("RESPONSE"))),
+        qset("SCORE_RESPONSE", qvalue(object@incorrect)))))
     htmltools::tagList(qset("FEEDBACK_RESPONSE", qvalue("none", "identifier")),
+                       qset("SCORE_RESPONSE", qvalue(0)),
                        qtag("responseCondition", branches))
 })
 
