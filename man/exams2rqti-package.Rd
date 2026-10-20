@@ -10,6 +10,14 @@ An experimental adapter. Rendering belongs to exams and QTI
 serialization belongs to rqti. Loading this package does not render exercises,
 write files, or start a preview server.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/johannes-titz/exams2rqti}
+  \item Report bugs at \url{https://github.com/johannes-titz/exams2rqti/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Johannes Titz \email{johannes.titz@gmail.com} (\href{https://orcid.org/0000-0002-1102-5719}{ORCID})
 

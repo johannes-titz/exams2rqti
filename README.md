@@ -1,10 +1,13 @@
 # exams2rqti
 
+[![R CMD check and tests](https://github.com/johannes-titz/exams2rqti/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/johannes-titz/exams2rqti/actions/workflows/R-CMD-check.yaml)
+
+The GitHub check runs the package tests as part of `R CMD check`.
+
+
 An experimental adapter from **exams choice, numeric, string and cloze exercises**
 to **rqti objects**. This repository is a small integration package and test bed
-for collaboration with the exams developers. It is not intended to take over
-the full exams workflow. It now covers every exercise type in the installed
-exams example collection, including manual essay/upload components.
+for collaboration with the exams developers. It now covers every exercise type in the installed exams example collection, including manual essay/upload components.
 
 ```text
 exams Rmd / Rnw → exams rendering + HTML → adapter → rqti objects → QTI
@@ -26,8 +29,7 @@ remotes::install_github("shevandrin/qti")
 remotes::install_github("johannes-titz/exams2rqti")
 ```
 
-This is a development version. Installing it from GitHub builds the R package
-directly from the repository. The repository also contains the
+The repository also contains the
 [exact 39-item QTI package tested in OPAL/ONYX](inst/extdata/exams2rqti-openolat-review-seed-0.zip).
 Import that ZIP as a QTI 2.1 test in OPAL or OpenOlat. An installed copy can
 locate the same file with:
@@ -44,13 +46,19 @@ labels every item with its source filename, and includes single-choice,
 multiple-choice, numeric, string, mixed cloze, essay and file-upload interactions.
 Six examples are omitted from this saved review subset: `automaton.Rmd`,
 `flags.Rmd`, `fruit.Rmd`, `fruit2.Rmd`, `logic.Rmd` and `vowels.Rmd`.
-Their inline styles have already been moved into CSS files in the full corpus;
-visual checks of those styles in the target players remain outstanding.
+The complete example collection means all 91 installed exams Rmd/Rnw sources.
+The corpus runner converts these same sources and moves inline styles into item
+CSS; it does not require replacement exercise files. The saved 39-item ZIP
+predates inclusion of the six CSS examples. Rebuild with `omit_css = FALSE`
+to include them.
+
+[Open the recorded OPAL review resource](https://bildungsportal.sachsen.de/opal/auth/RepositoryEntry/56358502401)
+(resource owners only). The last recorded upload contains the 39-item subset;
+see [the acceptance record](notes/opal-acceptance.md) for dates and checks.
+The rebuild/upload workflow below produces a current package.
+
 
 ## Translate exercises
-
-Requires R >= 4.1, exams >= 2.4.4, rqti >= 1.3.1.9000, and Pandoc for the default
-HTML converter. Rnw sources can additionally require LaTeX. After installation:
 
 ```r
 library(exams2rqti)
@@ -73,15 +81,17 @@ item <- examsRmd2RqtiObject(file.path(example_dir, "lm3.Rmd"), seed = 17,
 
 One source returns one item; several sources return a named list in input order.
 The batch is rendered in one exams call, so repeated filenames produce successive
-random variants and receive unique identifiers. `translateExercises()` remains
-available when a list return is needed even for one source.
+random variants and receive unique identifiers. Wrap a single returned item in
+`list(item)` when an rqti constructor requires a list.
+
 
 `points` overrides the maximum score of each exercise. Without it, the adapter
 uses the exercise's point metadata, falling back to one point when absent. A
 cloze exercise shares its total among components, or uses its component weights.
-The tests cover non-unit totals and unequal component weights as well as the
-one-point default. The saved 39-item review archive has a maximum of one point
+The tests cover maximum scores other than one (for example 0.5 or 3.5 points),
+unequal component weights and the one-point default. The saved 39-item review archive has a maximum of one point
 per exercise.
+
 
 ## Create archives for OPAL, OpenOlat and other QTI players
 
@@ -105,12 +115,7 @@ archive
 rqti::createQtiTask(items[[1]], dir = "qti-output", zip = TRUE)
 ```
 
-The test ZIP is the QTI 2.1 import archive for OPAL/ONYX and OpenOlat. It can also
-be used with other players that accept QTI 2.1 test packages; check their import
-support and rendering. The saved 39-item archive above was tested in OPAL/ONYX.
-`prepare_html = TRUE` moves inline styles into item CSS files, which rqti bundles
-with the item XML and manifest. This is explicit in the conversion call; the
-conversion default is `FALSE`.
+The test ZIP is the QTI 2.1 import archive for OPAL/ONYX and OpenOlat. It can also be used with other players that accept QTI 2.1 test packages. The saved 39-item archive above was tested in OPAL/ONYX. `prepare_html = TRUE` moves inline styles into item CSS files, which rqti bundles with the item XML and manifest. This is explicit in the conversion call; the conversion default is `FALSE`.
 
 For a quick test grouped into sections by exercise type, use
 `buildExams2RqtiAssessment(files = ..., prepare_html = TRUE)`, then export it
@@ -179,77 +184,88 @@ which items are included, not whether their CSS is extracted. Use
 `formats = c("Rmd", "Rnw")` in both calls for the complete corpus; Rnw rendering
 additionally needs LaTeX.
 
-## Suggested integration in exams
-
-The clean upstream design is an `exams2rqti()` front end beside
-`exams2moodle()`. It should use the existing `xexams()` pipeline through the
-HTML transform, translate each resulting exercise list into an rqti object, and
-then let rqti serialize the items, assessment, manifest, CSS and ZIP. It should
-not parse Rmd itself or edit serialized XML afterward.
-
-The following is the intended shape of that front end. It is abbreviated to
-show the package boundary; argument normalization, type-specific grading
-options, section titles and file naming can follow `exams2moodle()`.
+To upload a rebuilt archive through rqti's OPAL API (run explicitly in an
+authenticated session):
 
 ```r
-exams2rqti <- function(file, n = 1L, nsamp = NULL, dir = ".",
-                       name = "exam", seed = NULL, points = NULL,
-                       converter = "pandoc-mathjax", eval = NULL,
-                       shuffle = FALSE, ...) {
-  if (!requireNamespace("rqti", quietly = TRUE))
-    stop("Package 'rqti' is required.")
-
-  html <- make_exercise_transform_html(
-    converter = converter,
-    base64 = TRUE,
-    ...
-  )
-
-  # xexams performs weaving, reading, sampling and HTML transformation once.
-  rendered <- xexams(
-    file, n = n, nsamp = nsamp, dir = dir, seed = seed, points = points,
-    driver = list(
-      sweave = list(quiet = TRUE, pdf = FALSE, png = TRUE),
-      read = NULL,
-      transform = html,
-      write = NULL
-    )
-  )
-
-  archives <- lapply(seq_along(rendered), function(version) {
-    exercises <- rendered[[version]]
-    items <- Map(function(exercise, number) {
-      item <- asRqtiItem(
-        exercise,
-        identifier = sprintf("item_%02d", number),
-        eval = eval,
-        shuffle = shuffle
-      )
-      prepareQtiHtml(item)
-    }, exercises, seq_along(exercises))
-
-    section <- rqti::assessmentSection(items, identifier = "exercises")
-    test <- rqti::assessmentTest(
-      section = list(section),
-      identifier = sprintf("%s_%02d", name, version),
-      title = name,
-      rebuild_variables = NA,
-      fallback_titles = "filename"
-    )
-    rqti::createQtiTest(test, dir = dir, zip_only = TRUE)
-  })
-
-  invisible(archives)
-}
+con <- rqti::opal()
+rqti::upload2LMS(
+  con, test = review$archive, display_name = "exams2rqti-current-review",
+  access = 1, overwrite = FALSE, open_in_browser = FALSE
+)
+rqti::getLMSResourceURL(con, display_name = "exams2rqti-current-review")
 ```
 
-In exams itself, the one-exercise translator represented here by
-`asRqtiItem()` can be an internal function analogous to a
-`make_question_*()` backend. Depending on `exams2rqti` from exams would create
-a circular dependency because this adapter already imports exams; upstreaming
-the translator into exams and keeping rqti as the optional output backend avoids
-that cycle. This repository can remain the reference implementation and
-cross-package test suite.
+This creates an owners-only resource. To replace a resource you own, use its
+exact display name with `overwrite = TRUE`; check the returned resource URL.
+Rebuilding locally does not update the recorded OPAL resource automatically.
+
+## Replace an R/exams QTI export with rqti
+
+The package now provides a working `exams2rqti::exams2qti21()` backend. Its
+familiar `file`, `n`, `nsamp`, `selection`, `seed` and `eval` settings cover the
+core authoring workflow. It is not a drop-in replacement for every argument of
+`exams::exams2qti21()`; use rqti test settings instead of exams XML templates and
+exporter-specific options. Qualified calls avoid a name collision when both
+packages are attached.
+
+```r
+files <- c("swisscapital.Rmd", "switzerland.Rmd")
+
+# Existing backend:
+# exams::exams2qti21(files, n = 5, selection = "pool", dir = "old-output")
+
+# Same source-to-QTI workflow through rqti:
+result <- exams2rqti::exams2qti21(
+  files, n = 5, seed = 42, selection = "pool", dir = "qti-output",
+  eval = list(partial = TRUE, negative = FALSE, rule = "false2"),
+  academic_grading = rqti::german_grading()
+)
+result$archive
+rqti::render_qtijs(result$items[[1]][[1]])
+```
+
+Items are created independently of the target LMS. `test_constructor` chooses
+the test settings, and additional named arguments go to that constructor:
+
+```r
+opal_result <- exams2rqti::exams2qti21(
+  files, n = 5, seed = 42, dir = "qti-output/opal",
+  test_constructor = rqti::assessmentTestOpal,
+  show_test_time = FALSE, mark_items = FALSE,
+  academic_grading = rqti::german_grading()
+)
+```
+
+`academic_grading` adds rqti's final grade-table feedback; it does not change
+item scores. A single converted item can also be previewed directly with
+`render_qtijs()`. Display of grading feedback depends on the player.
+
+`xexams()` chooses sources and subsamples/shuffles their answers while rendering.
+It accepts a character vector, lists of alternative sources (with `nsamp`), or
+a source matrix. A scalar seed in this adapter seeds the whole rendering batch;
+a seed matrix is passed to `xexams()` unchanged. In contrast, `selection`
+controls the section structure that rqti writes for selection by the QTI player:
+
+| `selection` | QTI structure | Corresponding rqti grouping |
+|---|---|---|
+| `"pool"` | One pool per exercise position; select one of its `n` variants independently | `by = "files"` |
+| `"exam"` | One subsection per rendered exam; select one complete subsection | `by = "variants"` |
+
+For exercises sharing a story or dataset, use `selection = "exam"` and generate
+consistent shared data in the exams sources, for example with a suitable seed
+matrix. The exporter preserves the generated sets; it does not generate shared
+data automatically. With `n = 1`, either structure delivers the same items.
+
+All R/exams choice-scoring settings are translated through rqti. Unsupported
+non-choice penalties still raise an error; see the limits below.
+
+For integration into R/exams itself, `asRqtiItem()` could become an internal
+writer helper. R/exams would then call the rqti backend after its HTML transform.
+Making R/exams depend on this adapter would create a dependency cycle, because
+the adapter already imports R/exams. Moving the translator upstream and making
+rqti an optional output dependency avoids that cycle. This repository can
+remain the reference implementation and cross-package test suite.
 
 The contract at the translator boundary is deliberately small:
 
@@ -262,16 +278,13 @@ The contract at the translator boundary is deliberately small:
 3. HTML transformation uses `base64 = TRUE`, so plots and supplements travel
    with the item. `prepareQtiHtml()` moves inline declarations into item CSS;
    rqti then owns stylesheet references and manifest entries.
-4. Each item and test receives a stable, unique QTI identifier. One rendered
-   exam version becomes one `assessmentTest`; exams controls version generation
-   and rqti controls QTI packaging.
+4. Each item and test receives a stable, unique QTI identifier. Rendered versions are grouped into pools or complete-exam
+   subsections; exams controls generation and rqti controls QTI packaging.
 5. `rqti::verify_qti()` checks the resulting items/test before delivery.
-   Essay and upload components remain pending until the LMS supplies their
-   manual outcome scores.
 
 The current `asRqtiItem()` implementation and its tests cover the mapping that
-could be moved upstream. Keeping this rendered-object boundary also allows exams
-to add other input formats without changing the rqti backend.
+could be moved upstream.
+
 
 ## Integration boundary
 
@@ -301,8 +314,8 @@ carry `metainfo$markup = "html"`. Sources are evaluated as R code during renderi
 
 | Feature | Behaviour |
 |---|---|
-| `schoice` | Standard full/zero scoring; penalties only when exactly equal to rqti's `-points / (k - 1)` |
-| `mchoice` | Partial credit with a zero score floor; `false2`, `false`, `true`, and `all` rules |
+| `schoice` | Standard full/zero scoring and arbitrary finite R/exams penalties |
+| `mchoice` | All five R/exams weighting rules, partial or exact-match scoring, and configurable negative floors |
 | `num` | Absolute inclusive tolerance; numeric vectors require every field to be correct |
 | `string` | Exact, case-sensitive text matching; essay/file subtypes require human grading |
 | `cloze` | Mixed numeric, string, choice, essay and upload responses; numbered placeholders or appended fields |
@@ -314,19 +327,97 @@ carry `metainfo$markup = "html"`. Sources are evaluated as R code during renderi
 | Feedback | General solution plus each choice paired with its explanation, in modal feedback |
 | Content | Rendered HTML, including tables and math spans, is preserved; missing image `alt` attributes receive an empty string |
 | Assets | Supported images/assets are embedded by exams; any remaining supplements cause an error |
-| Metadata | Type, title/name, solutions, tolerance, points and relevant response sizes are mapped; platform-specific editor/attachment settings are not |
+| Exercise metadata | exams type, title/name, solutions, tolerance, points and relevant response sizes are mapped; platform-specific editor/attachment settings are not |
 | Identifiers | Sanitized file stems; batch duplicates receive unique suffixes |
 | Randomness | A supplied seed is applied once per batch and restores the caller's RNG; `seed = NULL` advances the current stream |
+
+
+Here, *cloze* is exams' general container for several responses in one
+exercise, not just a text gap. Components can include choices, numeric or text
+entries, essays and uploads. `##ANSWER1##`, `##ANSWER2##`, etc. place components
+inside the question; components without a placeholder are appended below it.
+
+The *verbatim* subtype is a separate exams input syntax that embeds a Moodle
+answer specification, for example `:NUMERICAL:=10:0.1~%50%9:0.1`: full credit
+within 0.1 of 10 and half credit within 0.1 of 9. It is parsed into native QTI
+numeric response processing; it is unrelated to free-text essays. Other Moodle
+verbatim response syntaxes are not implemented by this adapter.
+
+Ordinary exams numeric tolerance (`exnumtol`) is an absolute margin around the
+solution, with inclusive endpoints. The adapter retains that rule; rqti itself
+also supports relative tolerance, which must not be substituted for the exams
+rule. Numeric vectors require every component to satisfy its tolerance.
+
+Source answer shuffling/subsampling happens once, before translation; answer
+keys and explanations follow the resulting choices. Delivery shuffling simply
+sets QTI `shuffle="true"` and lets the player reshuffle those already sampled
+choices. Pool/exam selection is separate from both, as shown above. Feedback
+content follows the rendered exams solution and choice explanations; the
+player and test settings control when it is shown.
+
+A *supplement* is a generated external file, such as an image or downloadable
+attachment. The HTML transformer embeds supported assets. If a file remains in
+`x$supplements`, its temporary path would disappear after rendering, so the
+adapter raises an error listing the files rather than creating broken links.
+
+The metadata row refers to exams' authoring fields, not rqti's LOM metadata.
+Authors can attach rqti metadata explicitly after conversion, for example
+`item@metadata <- rqti::qtiMetadata(contributor = list(rqti::qtiContributor("Ada")))`.
 
 Grading settings are resolved in this order: function `eval` overrides exercise
 `metainfo$eval`, which overrides `partial = TRUE, negative = FALSE, rule = "false2"`.
 These are the adapter defaults; when integrating an exams exporter, pass that
 exporter's effective grading configuration explicitly.
 
-Multiple-choice `partial = FALSE` and negative total scores are unsupported.
-`rule = "none"` is also rejected: rqti 1.3.0 rewrites zero-valued distractor
-weights into penalties. These are limits of this adapter/backend combination,
-not of the QTI standard. Numeric/text responses reject negative-score policies.
+### Set choice grading with `eval`
+
+The existing `eval` argument accepts all R/exams choice-grading settings; no
+extra scoring interface is needed in the adapter. For example:
+
+```r
+# Single choice: retain a penalty of 30% for an incorrect answer.
+sc <- examsRmd2RqtiObject(swiss, seed = 42, points = 1,
+                        eval = list(negative = 0.3))
+
+# Multiple choice: ignore incorrect selections and allow partial credit.
+mc <- examsRmd2RqtiObject(file.path(example_dir, "switzerland.Rmd"),
+                        eval = list(partial = TRUE, rule = "none"))
+
+# Exact-match scoring, with a 25% penalty for an incorrect nonempty pattern.
+mc_exact <- examsRmd2RqtiObject(file.path(example_dir, "switzerland.Rmd"),
+                        eval = list(partial = FALSE, negative = 0.25))
+```
+
+For partial-credit multiple-choice items, each correct selection earns P/C,
+where P is the item maximum and C is the number of correct options. The five
+`rule` values set the deduction per selected incorrect option, before applying
+the score floor:
+
+| `rule` | Deduction per incorrect selection (W = number of incorrect options) |
+|---|---|
+| `"false2"` (default) | P/max(W, 2) |
+| `"false"` | P/W |
+| `"true"` | P/C |
+| `"all"` | P |
+| `"none"` | 0 |
+
+`negative = FALSE` gives a zero floor for multiple-choice items; a numeric d
+sets the floor to -abs(d)*P. For single-choice items, numeric d instead specifies
+the penalty for an incorrect answer, -abs(d)*P; omissions receive zero.
+`partial` and `rule` do not affect single-choice scoring. Logical `negative`
+values follow `exams::exams_eval()` as well.
+
+The same settings work with `asRqtiItem()`, `examsRmd2RqtiObject()`,
+`exams2qti21()` and `buildExams2RqtiAssessment()`. A batch-level `eval` override applies to every item;
+convert separately when different item policies are needed.
+
+Choice policies are checked against `exams::exams_eval()` by executing the
+generated QTI for every answer pattern in the regression fixtures. Extended
+policies require rqti's separate `single_choice_scoring()` and
+`multiple_choice_scoring()` interfaces. Numeric/text responses
+still reject negative-score policies; this extension concerns choice responses.
+Cloze retains its existing aggregation policy: component scores are added, with
+a zero floor for the complete item when a choice component permits penalties.
 
 For items containing essays/uploads, `AUTO_SCORE` is the automatic subtotal.
 `SCORE` has no default and remains null until a scorer supplies all manual
@@ -358,9 +449,11 @@ TikZ examples require working `magick`, ImageMagick and LaTeX installations.
 A separate, verified stylesheet experiment is in `notes/css-demo/`, with a
 German handoff note in `notes/achim-css.md`. It demonstrates moving the known
 example styles into classes and passing a CSS file to rqti's assessment-level
-`stylesheet_path`. Its explicit YAML wrapper accepts either a file path or a
-`css: |` text block. This is not native rqti item-Rmd YAML support, and the main
-adapter's explicit `prepareQtiHtml()` step now handles inline-style extraction.
+`stylesheet_path`. rqti development versions now support native item CSS, including
+`css` in rqti Rmd YAML and `stylesheet_path` for assessment stylesheets. The
+adapter converts exams sources rather than rqti YAML. Its `prepareQtiHtml()`
+step extracts inline CSS from the rendered exams HTML into rqti item CSS.
+
 
 With the updated rqti development version (`1.3.1.9000`), class-based versions
 of **all four** examples are available in `inst/examples/css-choice-variants.R`.

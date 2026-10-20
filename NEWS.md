@@ -4,6 +4,8 @@
   complete-exam selection, exams source sampling and optional rqti test settings.
 * Remove the redundant public `translateExercises()` interface; use
   `examsRmd2RqtiObject()` for single or batch conversion.
+* Clarify CSS extraction, OPAL review/upload steps and the translation limits
+  in the README; show existing CI checks and tests.
 
 * Accept multiple sources in `examsRmd2RqtiObject()`, returning a named list
   through the existing batch renderer while preserving the single-item return.
