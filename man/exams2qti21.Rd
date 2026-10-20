@@ -86,6 +86,6 @@ Export exams sources through rqti
 \details{
 This is an alternative QTI 2.1 backend, not an argument-for-argument
 replacement for \code{exams::exams2qti21()}. Rendering and source/answer sampling
-run once through \code{xexams()}. All R/exams choice grading rules are supported;
-unsupported non-choice penalties still produce an error.
+run once through \code{xexams()}. Grading settings, including numeric/text
+penalties, are passed to rqti. The platform wrappers use this same pipeline.
 }

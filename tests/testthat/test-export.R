@@ -44,3 +44,26 @@ test_that("export delegates alternative-source sampling and seed matrices to exa
     expect_error(exams2qti21(alternatives, n = 0), "positive integer")
     expect_error(exams2qti21(alternatives, section = list()), "Test settings")
 })
+
+test_that("platform wrappers share conversion and select the correct constructors", {
+    rendered <- list(list(choice_exercise("schoice", c(TRUE, FALSE, FALSE))))
+    calls <- 0L
+    local_mocked_bindings(renderExamsExercises = function(...) {
+        calls <<- calls + 1L
+        rendered
+    })
+    output <- withr::local_tempdir()
+    opal <- exams2opal("unused.Rmd", dir = output, name = "opal", max_attempts = 2)
+    openolat <- exams2openolat("unused.Rmd", dir = output, name = "openolat", max_attempts = 3)
+    expect_equal(calls, 2L)
+    expect_s4_class(opal$assessment, "AssessmentTestOpal")
+    expect_s4_class(openolat$assessment, "AssessmentTestOpenOlat")
+    expect_false(opal$assessment@show_test_time)
+    expect_false(opal$assessment@mark_items)
+    expect_true(file.exists(opal$archive))
+    expect_true(file.exists(openolat$archive))
+    expect_valid_qti(opal$assessment)
+    expect_valid_qti(openolat$assessment)
+    expect_error(exams2opal("unused.Rmd", test_constructor = rqti::assessmentTest), "exams2qti21")
+    expect_error(exams2opal("unused.Rmd", quiet = TRUE, quiet = FALSE), "unique names")
+})

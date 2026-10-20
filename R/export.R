@@ -27,8 +27,8 @@
 #'   and `items` (items grouped by rendered version).
 #' @details This is an alternative QTI 2.1 backend, not an argument-for-argument
 #'   replacement for `exams::exams2qti21()`. Rendering and source/answer sampling
-#'   run once through `xexams()`. All R/exams choice grading rules are supported;
-#'   unsupported non-choice penalties still produce an error.
+#'   run once through `xexams()`. Grading settings, including numeric/text
+#'   penalties, are passed to rqti. The platform wrappers use this same pipeline.
 #' @export
 exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
                         selection = c("pool", "exam"), seed = NULL, edir = NULL,
@@ -45,12 +45,7 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
         n < 1 || n != floor(n)) stop("n must be a positive integer.", call. = FALSE)
     if (!is.function(test_constructor)) stop("test_constructor must be a function.", call. = FALSE)
     settings <- list(...)
-    if (is.null(names(settings)) && length(settings) ||
-        any(!nzchar(names(settings))) || anyDuplicated(names(settings)) ||
-        any(names(settings) %in% c("section", "identifier", "title"))) {
-        stop("Test settings must have unique names other than section, identifier and title.",
-             call. = FALSE)
-    }
+    validateTestSettings(settings, c("section", "identifier", "title"))
     rendered <- renderExamsExercises(file, seed, converter, resolution, quiet,
         n = n, nsamp = nsamp, edir = edir, keep_versions = TRUE)
     test_id <- fileIdentifier(name)
@@ -84,4 +79,48 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
     if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
     archive <- rqti::createQtiTest(assessment, dir = dir, zip_only = TRUE)
     invisible(list(archive = archive, assessment = assessment, items = items))
+}
+
+#' Export exams sources for OPAL or OpenOlat
+#'
+#' @inheritParams exams2qti21
+#' @param ... Rendering, grading and selection arguments for [exams2qti21()],
+#'   plus settings for [rqti::assessmentTestOpal()] or
+#'   [rqti::assessmentTestOpenOlat()]. These are rqti settings rather than the
+#'   complete argument set of `exams::exams2openolat()`.
+#' @return The same invisible archive, assessment and items list as [exams2qti21()].
+#' @details These wrappers select a test constructor; generation, translation,
+#'   section building, validation and packaging are shared with [exams2qti21()].
+#'   OPAL timer and item-marking extensions default to `FALSE` for standard QTI
+#'   validation. Both wrappers create local ZIP files; upload is separate.
+#' @export
+exams2opal <- function(file, n = 1L, dir = ".", name = "opaltest", ...) {
+    exportExamsPlatform(file, n, dir, name, rqti::assessmentTestOpal,
+        list(show_test_time = FALSE, mark_items = FALSE), ...)
+}
+
+#' @rdname exams2opal
+#' @export
+exams2openolat <- function(file, n = 1L, dir = ".", name = "olattest", ...) {
+    exportExamsPlatform(file, n, dir, name, rqti::assessmentTestOpenOlat, list(), ...)
+}
+
+exportExamsPlatform <- function(file, n, dir, name, constructor, defaults, ...) {
+    settings <- list(...)
+    if ("test_constructor" %in% names(settings)) {
+        stop("Use exams2qti21() to choose a different test_constructor.", call. = FALSE)
+    }
+    validateTestSettings(settings)
+    for (key in setdiff(names(defaults), names(settings))) settings[[key]] <- defaults[[key]]
+    do.call(exams2qti21, c(list(file = file, n = n, dir = dir, name = name,
+        test_constructor = constructor), settings))
+}
+
+validateTestSettings <- function(settings, reserved = character()) {
+    if ((is.null(names(settings)) && length(settings)) || anyNA(names(settings)) ||
+        any(!nzchar(names(settings))) || anyDuplicated(names(settings)) ||
+        any(names(settings) %in% reserved)) {
+        stop("Test settings must have unique names; reserved: ", paste(reserved, collapse = ", "),
+             call. = FALSE)
+    }
 }
