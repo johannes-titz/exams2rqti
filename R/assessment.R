@@ -6,7 +6,7 @@
 #' @return A named list of file paths, grouped by type.
 #' @details This scanner reads literal type metadata in Rmd and Rnw files.
 #'   It does not evaluate dynamic metadata;
-#'   pass those sources explicitly to [translateExercises()].
+#'   pass those sources explicitly to [examsRmd2RqtiObject()].
 #' @export
 exerciseFilesByType <- function(exercise_dir = system.file("exercises", package = "exams"),
                                 types = c("schoice", "mchoice", "num", "string", "cloze")) {
@@ -35,13 +35,13 @@ exerciseFilesByType <- function(exercise_dir = system.file("exercises", package 
 #' Build an assessment for integration testing
 #'
 #' @inheritParams exerciseFilesByType
-#' @inheritParams translateExercises
+#' @inheritParams examsRmd2RqtiObject
 #' @param files Optional explicit source vector. If `NULL`, scan `exercise_dir`.
 #'   Items are grouped into sections by source exercise type.
 #' @param verify Run `rqti::verify_qti()` on the assessment and stop on invalid XML.
 #' @return An rqti `AssessmentTest`. Nothing is exported or previewed persistently.
 #' @details This is a convenience test builder, not a general exam workflow.
-#'   Use [translateExercises()] and rqti directly for custom test organization.
+#'   Use [examsRmd2RqtiObject()] and rqti directly for custom test organization.
 #' @export
 buildExams2RqtiAssessment <- function(
     exercise_dir = system.file("exercises", package = "exams"),
@@ -52,7 +52,7 @@ buildExams2RqtiAssessment <- function(
     if (!is.null(seed)) withr::local_preserve_seed()
     scalarLogical(verify, "verify")
     if (is.null(files)) files <- unlist(exerciseFilesByType(exercise_dir), use.names = FALSE)
-    items <- translateExercises(files, seed, points, eval, shuffle, converter, resolution, quiet)
+    items <- translateExamsBatch(files, seed, points, eval, shuffle, converter, resolution, quiet)
     scalarLogical(prepare_html, "prepare_html")
     if (prepare_html) items <- lapply(items, prepareQtiHtml)
     types <- vapply(items, function(x) {

@@ -76,19 +76,14 @@ renderExamsExercises <- function(files, seed, converter, resolution, quiet) {
 #' @inheritParams asRqtiItem
 #' @param path_rmd Character vector of exams Rmd/Rnw sources, or filenames
 #'   available in exams. One source returns one item; several return a named list.
-#' @param files Character vector of exams Rmd/Rnw sources. Each entry generates
-#'   one item, in input order. Repeated sources generate successive variants.
 #' @param prepare_html Apply [prepareQtiHtml()] to move inline styles into CSS
 #'   and omit HTML5 download hints. Default `FALSE` preserves original HTML.
 #' @return `examsRmd2RqtiObject()` returns one rqti item for one source, or a
-#'   named list for several sources;
-#'   `translateExercises()` returns a named list of rqti items.
+#'   named list for several sources.
 #' @details
 #' The grading, points and delivery-shuffle overrides apply to every item in a
 #' batch. Batch identifiers are sanitized file stems, made unique with suffixes.
 #' `identifier` and `title` overrides are only supported for a single source.
-#' `translateExercises()` provides the same batch conversion with a list return
-#' even for one source.
 #' No files are exported and no browser is opened; use rqti functions explicitly.
 #' @export
 examsRmd2RqtiObject <- function(path_rmd, seed = 0, points = NULL, eval = NULL,
@@ -99,7 +94,7 @@ examsRmd2RqtiObject <- function(path_rmd, seed = 0, points = NULL, eval = NULL,
         if (!is.null(identifier) || !is.null(title)) {
             stop("identifier and title overrides require a single source.", call. = FALSE)
         }
-        return(translateExercises(path_rmd, seed = seed, points = points, eval = eval,
+        return(translateExamsBatch(path_rmd, seed = seed, points = points, eval = eval,
             shuffle = shuffle, converter = converter, resolution = resolution,
             quiet = quiet, prepare_html = prepare_html))
     }
@@ -110,9 +105,7 @@ examsRmd2RqtiObject <- function(path_rmd, seed = 0, points = NULL, eval = NULL,
     if (prepare_html) prepareQtiHtml(item) else item
 }
 
-#' @rdname examsRmd2RqtiObject
-#' @export
-translateExercises <- function(files, seed = 0, points = NULL, eval = NULL,
+translateExamsBatch <- function(files, seed = 0, points = NULL, eval = NULL,
                                shuffle = FALSE, converter = "pandoc-mathjax",
                                resolution = 100, quiet = TRUE, prepare_html = FALSE) {
     exercises <- renderExamsExercises(files, seed, converter, resolution, quiet)

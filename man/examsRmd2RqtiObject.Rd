@@ -2,7 +2,6 @@
 % Please edit documentation in R/render.R
 \name{examsRmd2RqtiObject}
 \alias{examsRmd2RqtiObject}
-\alias{translateExercises}
 \title{Translate exams sources into rqti items}
 \usage{
 examsRmd2RqtiObject(
@@ -13,18 +12,6 @@ examsRmd2RqtiObject(
   shuffle = FALSE,
   identifier = NULL,
   title = NULL,
-  converter = "pandoc-mathjax",
-  resolution = 100,
-  quiet = TRUE,
-  prepare_html = FALSE
-)
-
-translateExercises(
-  files,
-  seed = 0,
-  points = NULL,
-  eval = NULL,
-  shuffle = FALSE,
   converter = "pandoc-mathjax",
   resolution = 100,
   quiet = TRUE,
@@ -62,14 +49,10 @@ stem, replacing invalid characters and adding a prefix when necessary.}
 
 \item{prepare_html}{Apply \code{\link[=prepareQtiHtml]{prepareQtiHtml()}} to move inline styles into CSS
 and omit HTML5 download hints. Default \code{FALSE} preserves original HTML.}
-
-\item{files}{Character vector of exams Rmd/Rnw sources. Each entry generates
-one item, in input order. Repeated sources generate successive variants.}
 }
 \value{
 \code{examsRmd2RqtiObject()} returns one rqti item for one source, or a
-named list for several sources;
-\code{translateExercises()} returns a named list of rqti items.
+named list for several sources.
 }
 \description{
 Translate exams sources into rqti items
@@ -78,7 +61,5 @@ Translate exams sources into rqti items
 The grading, points and delivery-shuffle overrides apply to every item in a
 batch. Batch identifiers are sanitized file stems, made unique with suffixes.
 \code{identifier} and \code{title} overrides are only supported for a single source.
-\code{translateExercises()} provides the same batch conversion with a list return
-even for one source.
 No files are exported and no browser is opened; use rqti functions explicitly.
 }

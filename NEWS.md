@@ -1,5 +1,8 @@
 # exams2rqti 0.1.0
 
+* Remove the redundant public `translateExercises()` interface; use
+  `examsRmd2RqtiObject()` for single or batch conversion.
+
 * Accept multiple sources in `examsRmd2RqtiObject()`, returning a named list
   through the existing batch renderer while preserving the single-item return.
 * Expand translation to numeric, exact text, and mixed cloze exercises, including

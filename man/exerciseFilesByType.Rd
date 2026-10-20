@@ -24,5 +24,5 @@ Find exams exercises by their static type metadata
 \details{
 This scanner reads literal type metadata in Rmd and Rnw files.
 It does not evaluate dynamic metadata;
-pass those sources explicitly to \code{\link[=translateExercises]{translateExercises()}}.
+pass those sources explicitly to \code{\link[=examsRmd2RqtiObject]{examsRmd2RqtiObject()}}.
 }

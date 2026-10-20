@@ -27,7 +27,7 @@ test_that("seeded rendering is reproducible and restores the caller RNG", {
 test_that("batch rendering draws successive variants and uses unique identifiers", {
     skip_if_not(rmarkdown::pandoc_available(), "Pandoc is required for rendering")
     file <- test_path("fixtures", "choice.Rmd")
-    items <- translateExercises(rep(file, 3), seed = 7, points = 4,
+    items <- translateExamsBatch(rep(file, 3), seed = 7, points = 4,
                                 eval = list(rule = "all"), shuffle = TRUE)
     expect_identical(names(items), c("choice", "choice_1", "choice_2"))
     expect_identical(vapply(items, function(x) x@identifier, character(1)),
@@ -38,7 +38,7 @@ test_that("batch rendering draws successive variants and uses unique identifiers
         expect_true(item@shuffle)
         expect_valid_qti(item)
     }
-    again <- translateExercises(rep(file, 3), seed = 7, points = 4,
+    again <- translateExamsBatch(rep(file, 3), seed = 7, points = 4,
                                 eval = list(rule = "all"), shuffle = TRUE)
     expect_identical(lapply(items, function(x) x@choices),
                      lapply(again, function(x) x@choices))
@@ -57,7 +57,7 @@ test_that("the file converter accepts several sources through the batch renderer
     items <- examsRmd2RqtiObject(files, seed = 7, points = 4,
         eval = list(rule = "all"), shuffle = TRUE, prepare_html = TRUE)
     expect_identical(.Random.seed, before)
-    expected <- translateExercises(files, seed = 7, points = 4,
+    expected <- translateExamsBatch(files, seed = 7, points = 4,
         eval = list(rule = "all"), shuffle = TRUE, prepare_html = TRUE)
     expect_identical(names(items), c("choice", "choice_1", "choice_2"))
     expect_identical(lapply(items, function(x) as.character(item_xml(x))),
@@ -74,7 +74,7 @@ test_that("the file converter accepts several sources through the batch renderer
     expect_s4_class(single, "AssessmentItem")
     expect_identical(single@identifier, "custom")
     expect_identical(single@title, "Custom")
-    expect_length(translateExercises(files[[1L]]), 1L)
+    expect_length(translateExamsBatch(files[[1L]]), 1L)
     expect_error(examsRmd2RqtiObject(files, identifier = "custom"), "single source")
     expect_error(examsRmd2RqtiObject(files, title = "Custom"), "single source")
 })
@@ -116,7 +116,7 @@ test_that("rendering checks arguments before running an exercise", {
     for (seed in list(-1, 0.5, Inf, NA_real_, "1", c(1, 2))) {
         expect_error(readExamsExercise("unused.Rmd", seed = seed), "seed")
     }
-    expect_error(translateExercises(character()), "files")
+    expect_error(translateExamsBatch(character()), "files")
     expect_error(readExamsExercise("unused.Rmd", resolution = 0), "resolution")
     expect_error(readExamsExercise("unused.Rmd", quiet = NA), "quiet")
 })

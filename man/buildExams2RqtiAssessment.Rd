@@ -73,5 +73,5 @@ Build an assessment for integration testing
 }
 \details{
 This is a convenience test builder, not a general exam workflow.
-Use \code{\link[=translateExercises]{translateExercises()}} and rqti directly for custom test organization.
+Use \code{\link[=examsRmd2RqtiObject]{examsRmd2RqtiObject()}} and rqti directly for custom test organization.
 }
