@@ -105,9 +105,10 @@ one point. Component grading is unchanged.
 ## Review example and remaining limits
 
 [Open the OPAL review test](https://bildungsportal.sachsen.de/opal/auth/RepositoryEntry/56358502401)
-or [download its 39-item QTI archive](inst/extdata/exams2rqti-openolat-review-seed-0.zip).
-This saved subset predates the current exporter. Check appearance, feedback and
-manual grading in the target player after import.
+or [download the 45-item review archive](inst/extdata/exams2rqti-opal-review-seed-0.zip),
+rebuilt on **2026-10-21** using `exams2opal()`. This rebuild has not yet been
+uploaded to the linked OPAL resource. Check appearance, feedback and manual
+grading in the target player after import.
 
 Moodle verbatim numeric, short-answer and choice syntax is translated to QTI,
 including partial credit, wildcards and checkboxes. Linked local supplements

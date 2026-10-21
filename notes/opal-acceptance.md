@@ -1,5 +1,27 @@
 # OPAL acceptance test
 
+## Rebuild on 2026-10-21: upload pending
+
+The current public `exams2rqti::exams2opal()` exporter freshly rendered all 45
+installed Rmd examples in one seed-0 batch, including the six CSS examples.
+No saved corpus objects or older ZIP contents were reused. Item titles identify
+source filenames and the assessment title is
+`exams2rqti OPAL review - 2026-10-21 - 45 Rmd items`.
+
+Adapter commit: `b9136429022def584244b585d8a2ed4bce0adb94`.
+rqti commit: `0d4c1f36745d4950e9a3e32a04de11d710667a3d`.
+Archive MD5: `1159499541b56907032ef5b698fea8cd` (743637 bytes).
+Build provenance is included alongside the ZIP in `inst/extdata`.
+All 45 item schemas, the assessment schema, linked responses, embedded images,
+HTML tables, code blocks and numeric tolerance rules passed the structural audit.
+
+This session cannot access the OPAL system credential service and has no
+connected browser, so no live replacement or current player audit has occurred.
+`inst/examples/upload-current-opal-review.R` prepares a checksum-checked update
+of resource `56358502401` from an authenticated local R session. It preserves
+that resource's URL and access settings. The records below describe the earlier
+live uploads and remain historical acceptance evidence.
+
 On 2026-09-27 the seed-0 package containing all 91 installed exams examples was
 uploaded as a new test with `access = 1` (resource owners only):
 

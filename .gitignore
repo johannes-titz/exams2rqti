@@ -7,5 +7,6 @@ email.txt
 temp/
 *.zip
 !inst/extdata/exams2rqti-openolat-review-seed-0.zip
+!inst/extdata/exams2rqti-opal-review-seed-0.zip
 *.tar.gz
 *.Rcheck/
