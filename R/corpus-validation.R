@@ -1,7 +1,6 @@
 # Run from the repository root after pkgload::load_all():
-# source("inst/examples/check-exams-corpus.R")
-# runExamsCorpus("/tmp/exams-corpus")
-# runExamsCorpus("/tmp/exams-rmd", seeds = 0, formats = "Rmd")
+# exams2rqti:::runExamsCorpus("/tmp/exams-corpus")
+# exams2rqti:::runExamsCorpus("/tmp/exams-rmd", seeds = 0, formats = "Rmd")
 # Optional rendered_dir reuses explicit snapshots from an earlier rendering run.
 
 checkCorpusContent <- function(exercise, doc) {

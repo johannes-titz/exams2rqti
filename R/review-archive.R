@@ -1,7 +1,6 @@
 # Build a labelled review copy from the validated corpus; no network side effects.
 # pkgload::load_all()
-# source("inst/examples/build-opal-review.R")
-# buildOpalReview("/tmp/exams-full-validation-final", "/tmp/exams-opal-review")
+# exams2rqti:::buildOpalReview("/tmp/exams-full-validation-final", "/tmp/exams-opal-review")
 buildOpalReview <- function(corpus, output, seed = 0L, omit_css = TRUE,
                            formats = "Rmd") {
     stopifnot(length(formats) > 0L, all(formats %in% c("Rmd", "Rnw")))

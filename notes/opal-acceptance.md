@@ -15,8 +15,8 @@ Build provenance is included alongside the ZIP in `inst/extdata`.
 All 45 item schemas, the assessment schema, linked responses, embedded images,
 HTML tables, code blocks and numeric tolerance rules passed the structural audit.
 
-The user ran `inst/examples/upload-current-opal-review.R` in an authenticated
-local R session. Its receipt records a replacement at `2026-10-21T11:06:59+0200`,
+The user ran the upload helper (now in `R/review-upload.R`) in an
+authenticated local R session. Its receipt records a replacement at `2026-10-21T11:06:59+0200`,
 with the archive MD5 above and the same resource key `56358502401`. The helper
 checked the local checksum and read back the resource key/type; this is not a
 server-side archive checksum or a new live player audit.
@@ -43,9 +43,8 @@ CSS duplicates in the full package; these were corrected versions of the source
 items themselves. The complete validated corpus remains unchanged locally.
 The OPAL resource's original display name was retained.
 
-To reproduce the review subset, load the package and source
-`inst/examples/build-opal-review.R`, then run
-`buildOpalReview("/tmp/exams-full-validation-final", "/tmp/exams-opal-review-rmd")`.
+To reproduce the historical review subset, load the package and run
+`exams2rqti:::buildOpalReview("/tmp/exams-full-validation-final", "/tmp/exams-opal-review-rmd")`.
 The builder verifies that retained item XML changes only in its title, checks
 manifest files and validates the assessment XML. `omit_css = FALSE` includes
 the CSS-corrected items; `formats = c("Rmd", "Rnw")` includes both source formats.

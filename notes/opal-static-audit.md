@@ -6,7 +6,7 @@ the REST API. The uploaded archive has MD5
 `bd8f792b44c1aec5dcf231572974c9ef` (455233 bytes).
 
 The reproducible structural audit is in
-`inst/examples/check-opal-review.R`. For the remote package it found:
+`R/review-validation.R`. For the remote package it found:
 
 | Check | Result |
 |---|---:|

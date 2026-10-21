@@ -24,7 +24,7 @@ YAML fields named `css` or `stylesheet_path`. The local rqti checkout now has
 native item-level YAML support for both fields, with XML and ZIP packaging
 tests. That change is committed as `f2b1621d` and installed locally as
 rqti `1.3.0.9000`, but is not yet released. This demo retains the wrapper so it
-also works with rqti 1.3.0. The newer `inst/examples/css-choice-variants.R`
+also works with rqti 1.3.0. The newer `R/review-css.R`
 example uses native item CSS for all four affected choice exercises and
 exports two seeds each; its regression tests check full content preservation.
 The follow-up fix `ecb24296` is also installed and covers manifest entries for

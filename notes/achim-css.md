@@ -128,7 +128,7 @@ referenziert CSS dagegen aus den einzelnen Item-XML-Dateien. Der visuelle
 Importtest im jeweiligen LMS steht noch aus; Schema-Validität allein
 garantiert nicht, dass ein LMS das CSS wie beabsichtigt darstellt.
 
-Das neue Beispiel `inst/examples/css-choice-variants.R` erstellt zusätzlich
+Das neue Beispiel `R/review-css.R` erstellt zusätzlich
 Item-CSS-Versionen von `flags`, `fruit2`, `logic` und `automaton`, jeweils mit
 Seeds 0 und 17. Alle acht Varianten bestehen `verify_qti()`. Die Regressionstests
 machen ausschließlich die CSS-Auslagerung rückgängig und vergleichen dann den

@@ -149,17 +149,13 @@ test bed. The following recreates it from the installed exams Rmd examples:
 ```r
 library(exams2rqti)
 
-source(system.file("examples", "check-exams-corpus.R", package = "exams2rqti"))
-source(system.file("examples", "build-opal-review.R", package = "exams2rqti"))
-source(system.file("examples", "check-opal-review.R", package = "exams2rqti"))
-
 corpus_dir <- file.path(tempdir(), "exams2rqti-corpus")
 review_dir <- file.path(getwd(), "openolat-review")
 
-runExamsCorpus(corpus_dir, seeds = 0, formats = "Rmd")
-review <- buildOpalReview(corpus_dir, review_dir, seed = 0,
+exams2rqti:::runExamsCorpus(corpus_dir, seeds = 0, formats = "Rmd")
+review <- exams2rqti:::buildOpalReview(corpus_dir, review_dir, seed = 0,
                           formats = "Rmd", omit_css = TRUE)
-checkOpalReviewPackage(
+exams2rqti:::checkOpalReviewPackage(
   review$archive,
   file.path(review_dir, "audit.csv")
 )
@@ -173,9 +169,9 @@ This path needs Pandoc plus the packages in `Suggests`. The image audit calls
 uses the ImageMagick libraries. Independently, exams uses `magick` when rendering
 TikZ/LaTeX content as PNG, which also needs LaTeX.
 
-The saved review ZIP omits six examples: `automaton.Rmd`, `flags.Rmd`,
+The archived 39-item review ZIP omitted six examples: `automaton.Rmd`, `flags.Rmd`,
 `fruit.Rmd`, `fruit2.Rmd`, `logic.Rmd` and `vowels.Rmd`. To include them in a
-new review ZIP, call `buildOpalReview(..., omit_css = FALSE)`. The corpus runner
+new review ZIP, call `exams2rqti:::buildOpalReview(..., omit_css = FALSE)`. The corpus runner
 converts their inline styles to CSS automatically; no replacement sources or
 manual CSS editing are needed. Check their appearance after importing the ZIP. Use
 `formats = c("Rmd", "Rnw")` in both calls for the complete corpus; Rnw rendering
@@ -473,15 +469,14 @@ step extracts inline CSS from the rendered exams HTML into rqti item CSS.
 
 
 With the updated rqti development version (`1.3.1.9000`), class-based versions
-of **all four** examples are available in `inst/examples/css-choice-variants.R`.
+of **all four** examples are available in `R/review-css.R`.
 They use rqti's new item-level `css` slot, which writes a stylesheet and includes
 it in the XML, ZIP and manifest. To produce original XML, corrected XML with CSS,
 a combined assessment ZIP and a validation report for seeds 0 and 17:
 
 ```r
 pkgload::load_all()
-source("inst/examples/css-choice-variants.R")
-buildCssChoiceExamples("/tmp/exams-css-choice-variants")
+exams2rqti:::buildCssChoiceExamples("/tmp/exams-css-choice-variants")
 ```
 
 This example converter recognizes only the five exact styles used by those
@@ -533,8 +528,7 @@ Run the complete installed corpus explicitly (including optional dependencies):
 
 ```r
 pkgload::load_all()
-source("inst/examples/check-exams-corpus.R")
-result <- runExamsCorpus("/tmp/exams-corpus", seeds = c(0, 17))
+result <- exams2rqti:::runExamsCorpus("/tmp/exams-corpus", seeds = c(0, 17))
 stopifnot(all(result$report$status == "pass"))
 ```
 
@@ -545,7 +539,7 @@ and produces an assessment ZIP per seed. ZIP checks cover item XML and CSS bytes
 plus manifest/CSS links. Reports include a session record for reproducibility.
 See `notes/corpus-report.csv` and `notes/corpus-report.md` for the recorded run.
 
-Run `inst/examples/check-choice-corpus.R` explicitly to get a per-file, per-seed
+Run `tools/check-choice-corpus.R` explicitly to get a per-file, per-seed
 report for the installed exams choice corpus. It distinguishes rendering errors
 from schema failures, rather than skipping either silently.
 

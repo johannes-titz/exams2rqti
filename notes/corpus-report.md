@@ -54,8 +54,7 @@ support), plus Pandoc, LaTeX, magick and ImageMagick for the bundled examples:
 
 ```r
 pkgload::load_all()
-source("inst/examples/check-exams-corpus.R")
-result <- runExamsCorpus("/tmp/exams-corpus", seeds = c(0, 17))
+result <- exams2rqti:::runExamsCorpus("/tmp/exams-corpus", seeds = c(0, 17))
 stopifnot(all(result$report$status == "pass"))
 testthat::test_local()
 rcmdcheck::rcmdcheck(args = "--no-manual")
