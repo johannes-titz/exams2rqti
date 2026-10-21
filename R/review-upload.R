@@ -3,8 +3,8 @@
 # OPAL's resource title is separate from the assessment title inside the ZIP.
 
 uploadCurrentOpalReview <- function(
-    archive = "inst/extdata/exams2rqti-opal-review-seed-0.zip",
-    provenance = "inst/extdata/exams2rqti-opal-review-build.csv",
+    archive = "inst/extdata/exams2rqti-review-seed-0.zip",
+    provenance = "inst/extdata/exams2rqti-review-build.csv",
     resource_key = "56358502401", connection = NULL
 ) {
     stopifnot(file.exists(archive), file.exists(provenance),
@@ -14,7 +14,7 @@ uploadCurrentOpalReview <- function(
     build <- utils::read.csv(provenance, stringsAsFactors = FALSE)
     stopifnot(nrow(build) == 1L,
         identical(unname(tools::md5sum(archive)), build$archive_md5),
-        identical(build$exporter, "exams2rqti::exams2opal"),
+        build$exporter %in% c("exams2rqti::exams2opal", "exams2rqti::exams2openolat"),
         is.character(build$title), length(build$title) == 1L,
         !is.na(build$title), nzchar(trimws(build$title)))
     unpacked <- tempfile("opal-review-")

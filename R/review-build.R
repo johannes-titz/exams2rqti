@@ -4,15 +4,17 @@ buildCurrentOpalReview <- function(output, seed = 0L,
                                   date = format(Sys.Date(), "%Y-%m-%d"),
                                   adapter_commit = NA_character_,
                                   rqti_commit = NA_character_,
-                                  platform = c("OPAL", "OpenOlat")) {
+                                  platform = c("OPAL", "OpenOlat", "OPAL/OpenOlat")) {
     platform <- match.arg(platform)
     files <- list.files(system.file("exercises", package = "exams"),
         pattern = "[.]Rmd$", full.names = TRUE)
     stopifnot(length(files) > 0L, length(date) == 1L, !is.na(as.Date(date)))
     identifier <- paste0("exams_review_", gsub("-", "_", date))
     exporter <- if (platform == "OPAL") exams2opal else exams2openolat
-    result <- exporter(files, n = 1L, seed = seed,
+    args <- list(file = files, n = 1L, seed = seed,
         dir = output, name = identifier, prepare_html = TRUE)
+    if (platform == "OPAL/OpenOlat") args$scoreprogress <- TRUE
+    result <- do.call(exporter, args)
     stopifnot(length(result$items) == 1L, length(result$items[[1]]) == length(files))
     # Keep the public exporter's content, scoring, grouping and configuration;
     # label its items and test so reviewers can identify sources and build date.
@@ -48,4 +50,8 @@ buildCurrentOpalReview <- function(output, seed = 0L,
 
 buildCurrentOpenOlatReview <- function(...) {
     buildCurrentOpalReview(..., platform = "OpenOlat")
+}
+
+buildCurrentReview <- function(...) {
+    buildCurrentOpalReview(..., platform = "OPAL/OpenOlat")
 }
