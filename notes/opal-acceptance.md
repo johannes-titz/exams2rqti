@@ -1,6 +1,6 @@
 # OPAL acceptance test
 
-## Rebuild on 2026-10-21: upload pending
+## Rebuild and manual upload on 2026-10-21
 
 The current public `exams2rqti::exams2opal()` exporter freshly rendered all 45
 installed Rmd examples in one seed-0 batch, including the six CSS examples.
@@ -15,26 +15,33 @@ Build provenance is included alongside the ZIP in `inst/extdata`.
 All 45 item schemas, the assessment schema, linked responses, embedded images,
 HTML tables, code blocks and numeric tolerance rules passed the structural audit.
 
-This session cannot access the OPAL system credential service and has no
-connected browser, so no live replacement or current player audit has occurred.
-`inst/examples/upload-current-opal-review.R` prepares a checksum-checked update
-of resource `56358502401` from an authenticated local R session. It preserves
-that resource's URL and access settings. The records below describe the earlier
-live uploads and remain historical acceptance evidence.
+The user ran `inst/examples/upload-current-opal-review.R` in an authenticated
+local R session. Its receipt records a replacement at `2026-10-21T11:06:59+0200`,
+with the archive MD5 above and the same resource key `56358502401`. The helper
+checked the local checksum and read back the resource key/type; this is not a
+server-side archive checksum or a new live player audit.
+
+The update preserves the URL, access settings and OPAL resource display name.
+The user reports that the display name still refers to 91 exercises and
+2026-09-27. It needs a separate metadata rename to match the assessment title
+above. The records below describe earlier live uploads and remain historical
+acceptance evidence.
+
+## Earlier uploads and the 39-item review
 
 On 2026-09-27 the seed-0 package containing all 91 installed exams examples was
 uploaded as a new test with `access = 1` (resource owners only):
 
 [Open the test in OPAL](https://bildungsportal.sachsen.de/opal/auth/RepositoryEntry/56358502401)
 
-The same resource now contains a **39-item Rmd-only review subset**. All
+The same resource was then replaced with a **39-item Rmd-only review subset**. All
 item titles include the source filename, such as `[boxhist2.Rmd]`. Rnw sources
 are excluded from OPAL review. The six Rmd items using extracted CSS remain
 temporarily omitted: `automaton.Rmd`, `flags.Rmd`, `fruit.Rmd`, `fruit2.Rmd`,
 `logic.Rmd`, and `vowels.Rmd`. There were no separate
 CSS duplicates in the full package; these were corrected versions of the source
 items themselves. The complete validated corpus remains unchanged locally.
-The OPAL resource's original display name may still refer to 91 items.
+The OPAL resource's original display name was retained.
 
 To reproduce the review subset, load the package and source
 `inst/examples/build-opal-review.R`, then run

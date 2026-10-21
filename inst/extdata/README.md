@@ -4,8 +4,10 @@
 current `exams2rqti::exams2opal()` exporter, with all **45 Rmd examples**, including
 the six examples whose inline styles are extracted into item CSS. The assessment
 title carries the build date, and item titles identify their source files.
-All 45 items and the assessment pass the structural/schema audit. This archive
-has not yet been uploaded to OPAL; it has not received a live player audit.
+All 45 items and the assessment pass the structural/schema audit. The upload
+receipt records replacement of OPAL resource `56358502401` on **2026-10-21**
+at 11:06:59 +0200 with this archive's MD5. The new version has not received a
+live player audit.
 
 `exams2rqti-opal-review-build.csv` records the exporter, build date, package
 versions, adapter/rqti Git commits and archive MD5. Rebuild locally with
@@ -19,9 +21,13 @@ uploadCurrentOpalReview()
 
 The upload helper checks the archive checksum, selects resource `56358502401`
 by its key, rejects ambiguous display names, and verifies that OPAL returns the
-same resource key. It preserves the existing URL and access settings. The
-resource's original creation date remains historical; the test title and upload
-receipt identify the fresh build.
+same resource key. It preserves the existing URL, access settings and OPAL
+resource title. The assessment title inside the ZIP does not rename the OPAL
+resource. In OPAL, use **Details and settings > Change description** to rename
+it to `exams2rqti OPAL review - 2026-10-21 - 45 Rmd items`. The resource's
+original creation date remains historical; the assessment title and upload
+receipt identify the fresh build. The helper reports any title mismatch after
+uploading.
 
 ## Archived 2026-09-28 review
 
