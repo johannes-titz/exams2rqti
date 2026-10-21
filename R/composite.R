@@ -16,7 +16,9 @@ methods::setClass("ExamsComposite", contains = "AssessmentItem",
                   slots = c(parts = "list", manual = "logical", body = "character", source_type = "character", all_or_nothing = "logical"),
                   prototype = list(all_or_nothing = FALSE))
 methods::setClass("ExamsManual", contains = "AssessmentItem",
-                  slots = c(kind = "character", expected_length = "numeric", expected_lines = "numeric"))
+                  slots = c(kind = "character", expected_length = "numeric", expected_lines = "numeric",
+                      format = "character", required = "logical", copypaste = "logical"),
+                  prototype = list(format = "plain", required = FALSE, copypaste = TRUE))
 methods::setClass("ExamsVerbatimNumeric", contains = "NumericGap", slots = c(alternatives = "list"))
 
 # rqti's empty NumericGap prototype cannot be initialized without a solution.
@@ -150,7 +152,9 @@ methods::setMethod("createItemBody", "ExamsManual", function(object) {
     interaction <- if (object@kind == "file") {
         qtag("uploadInteraction", responseIdentifier = "RESPONSE")
     } else qtag("extendedTextInteraction", responseIdentifier = "RESPONSE",
-               expectedLength = object@expected_length, expectedLines = object@expected_lines)
+               expectedLength = object@expected_length, expectedLines = object@expected_lines,
+               format = object@format, minStrings = as.integer(object@required),
+               class = if (!object@copypaste) "essay-nocopypaste")
     qtag("itemBody", interaction)
 })
 

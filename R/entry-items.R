@@ -58,6 +58,16 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
         return(asRqtiItem(x, identifier = "component", points = points, eval = eval, shuffle = shuffle))
     }
     if (type %in% c("essay", "file")) {
+        format <- metadata$essay_format
+        formats <- c(editor = "xhtml", editorfilepicker = "xhtml", plain = "plain", monospaced = "preformatted")
+        if (is.null(format)) format <- "plain"
+        else if (length(format) != 1L || is.na(format) || !format %in% names(formats)) {
+            stop("Unsupported essay_format: ", paste(format, collapse = ", "), call. = FALSE)
+        } else format <- unname(formats[format])
+        required <- if (is.null(metadata$essay_required)) FALSE else metadata$essay_required
+        copypaste <- if (is.null(metadata$essay_copypaste)) TRUE else metadata$essay_copypaste
+        scalarLogical(required, "essay_required")
+        scalarLogical(copypaste, "essay_copypaste")
         chars <- metadata$maxchars
         if (is.list(chars)) chars <- chars[[1L]]
         lines <- metadata$essay_fieldlines
@@ -69,9 +79,14 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
         expected_length <- if (length(chars) && !is.na(chars[1])) {
             min(as.numeric(chars[1]), 100)
         } else 100
+        if (length(lines) != 1L || !is.numeric(lines) || !is.finite(lines) ||
+            lines < 1 || lines != floor(lines) || !is.finite(expected_length) ||
+            expected_length < 1 || expected_length != floor(expected_length)) {
+            stop("Essay display sizes must be positive finite integers.", call. = FALSE)
+        }
         return(methods::new("ExamsManual", identifier = "component", points = points, kind = type,
             expected_length = expected_length,
-            expected_lines = as.numeric(lines)))
+            expected_lines = as.numeric(lines), format = format, required = required, copypaste = copypaste))
     }
     stop("Unsupported cloze response type: ", type, call. = FALSE)
 }
@@ -152,6 +167,13 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
     } else if (metadata$type == "string" && isTRUE(metadata$essay)) types <- "essay"
     n <- length(types)
     if (!n || anyNA(types)) stop("At least one response type is required.", call. = FALSE)
+    if (any(types %in% c("essay", "file")) &&
+        (isTRUE(metadata$essay_attachmentsrequired) ||
+         (!is.null(metadata$essay_attachments) && any(metadata$essay_attachments > 0)))) {
+        warning("QTI 2.1 cannot enforce essay attachment counts or required attachments. ",
+            "Use an explicit file response (exstringtype/exclozetype = 'file') and ",
+            "configure attachment requirements in the target LMS.", call. = FALSE)
+    }
     weights <- metadata$points
     if (is.null(weights)) weights <- 1
     if (!is.numeric(weights) || any(!is.finite(weights)) || any(weights <= 0) || !length(weights) %in% c(1L, n)) {
@@ -175,7 +197,14 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
     if (!length(tolerances) %in% c(1L, n)) stop("Tolerance must be scalar or one value per response.", call. = FALSE)
     tolerances <- rep(tolerances, length.out = n)
     parts <- lapply(seq_len(n), function(i) {
-        makeExamPart(types[i], solutions[[i]], groups[[i]], weights[i], tolerances[i], eval, shuffle, metadata)
+        component <- metadata
+        if (is.list(metadata$maxchars)) {
+            if (!length(metadata$maxchars) %in% c(1L, n)) {
+                stop("maxchars must have one entry or one per component.", call. = FALSE)
+            }
+            component$maxchars <- rep(metadata$maxchars, length.out = n)[[i]]
+        }
+        makeExamPart(types[i], solutions[[i]], groups[[i]], weights[i], tolerances[i], eval, shuffle, component)
     })
     body <- insertPartInteractions(normalizeChoiceHtml(x$question), parts, types, groups)
     feedback <- normalizeChoiceHtml(x$solutionlist)
