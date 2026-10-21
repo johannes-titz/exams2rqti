@@ -50,9 +50,10 @@ An earlier build was imported into local OpenOlat 20.1.18 as resource `2228224`.
 question pages opened; representative response submission and feedback were
 checked. Exact awarded points and manual grading are not yet verified. See
 `notes/openolat-acceptance-20261021.md` for the scope of the checks.
-The saved archive was subsequently rebuilt with the OpenOlat formula-markup fix.
-Its checksum is recorded in the build CSV; live import of this corrected build
-remains unverified.
+The saved archive was subsequently rebuilt with the OpenOlat formula-markup fix
+and imported as resource `2228225`. All 45 pages opened again and the checked images
+loaded. The fruit and Cholesky formulas were visually verified without duplicate
+TeX delimiters. Its checksum is recorded in the build CSV.
 
 ## Archived 2026-09-28 review
 

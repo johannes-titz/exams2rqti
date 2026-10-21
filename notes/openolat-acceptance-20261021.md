@@ -34,6 +34,19 @@ outside this smoke test.
 
 The saved archive was rebuilt at `2026-10-21T13:51:47+0200` with the OpenOlat
 formula-markup fix. Its MD5 is `82f08830cf2d8d8e1fd0f17123a31f3f`; the build CSV
-records the source commit and dirty-worktree status. This corrected archive
-has not yet received a live import/player check. The observations above apply
-to the initial archive.
+records the source commit and dirty-worktree status. The corrected archive was
+imported through the browser into the same OpenOlat instance as resource 2228225:
+http://localhost:8080/auth/RepositoryEntry/2228225
+
+All 45 question pages were opened again and every checked DOM image loaded.
+The fruit question and Cholesky decomposition were checked visually: formulas
+render without the extra red TeX delimiters observed in the initial import.
+The corrected preview is left open without submitted answers for author review.
+The initial resource is retained for comparison. Response submission observations
+above refer to the initial import; awarded points and manual grading remain
+unverified. Archive comparison confirmed identical response processing and
+question text, with only the math class normalization and regenerated PNG metadata
+changed; decoded image pixels are identical.
+
+Screenshots and the corrected 45-page DOM audit are saved in the paper checkout
+under `output/openolat-review/`.
