@@ -1,27 +1,18 @@
 parseVerbatimNumeric <- function(solution) {
     if (length(solution) != 1L || !is.character(solution) ||
-        !grepl("^:(NUMERIC|NUMERICAL):", solution)) {
+        !grepl("^:(NUMERIC|NUMERICAL|NM):", solution)) {
         stop("Only numeric Moodle verbatim cloze syntax is supported.", call. = FALSE)
     }
-    answer <- sub("^:(NUMERIC|NUMERICAL):", "", solution)
-    alternatives <- strsplit(answer, "~", fixed = TRUE)[[1]]
-    lapply(alternatives, function(text) {
-        credit <- if (startsWith(text, "=")) 1 else {
-            prefix <- regmatches(text, regexpr("^%[+-]?[0-9.]+%", text))
-            if (!length(prefix)) stop("Unsupported verbatim credit syntax.", call. = FALSE)
-            as.numeric(gsub("%", "", prefix, fixed = TRUE)) / 100
-        }
-        text <- sub("^(=|%[+-]?[0-9.]+%)", "", text)
-        feedback <- if (grepl("#", text, fixed = TRUE)) sub("^[^#]*#", "", text) else ""
-        numeric <- strsplit(sub("#.*$", "", text), ":", fixed = TRUE)[[1]]
+    answer <- sub("^:(NUMERIC|NUMERICAL|NM):", "", solution)
+    lapply(verbatimAnswers(answer), function(alternative) {
+        numeric <- strsplit(alternative$value, ":", fixed = TRUE)[[1]]
         values <- suppressWarnings(as.numeric(numeric))
         if (!length(values) %in% 1:2 || anyNA(values) || any(!is.finite(values)) ||
-            !is.finite(credit) || credit < -1 || credit > 1 ||
             (length(values) == 2L && values[2] < 0)) {
             stop("Unsupported verbatim numeric answer/tolerance.", call. = FALSE)
         }
         list(value = values[1], tolerance = if (length(values) == 2L) values[2] else 0,
-             credit = credit, feedback = feedback)
+             credit = alternative$credit, feedback = alternative$feedback)
     })
 }
 
@@ -48,6 +39,9 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
                              case_sensitive = TRUE, incorrect = incorrect))
     }
     if (type == "verbatim") {
+        if (!grepl("^:(NUMERIC|NUMERICAL|NM):", solution)) {
+            return(makeVerbatimPart(solution, points, shuffle, incorrect))
+        }
         alternatives <- parseVerbatimNumeric(solution)
         full <- which(vapply(alternatives, function(x) x$credit == 1, logical(1)))
         if (!length(full)) stop("Verbatim numeric response needs a full-credit answer.", call. = FALSE)
@@ -83,6 +77,11 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
 }
 
 partInteraction <- function(part, type, index, embedded) {
+    if (methods::is(part, "ExamsVerbatim")) {
+        return(list(html = as.character(htmltools::tagList(partTags(
+            rqti::createItemBody(part)$children, index))),
+            block = part@kind == "choice" && !part@inline))
+    }
     if (methods::is(part, "Gap")) {
         return(list(html = as.character(htmltools::tagList(partTags(rqti::createText(part), index))), block = FALSE))
     }

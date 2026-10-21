@@ -104,8 +104,8 @@ test_that("numeric verbatim alternatives preserve ordered partial credit and fee
     result <- score_qti(doc, responses = list(part1_RESPONSE = 5.05), outcomes = TRUE)
     expect_identical(result$part1_FEEDBACK_RESPONSE, "alternative_2")
     expect_match(xml2::xml_text(xml2::xml_find_first(doc, "//feedbackInline")), "Rounding error")
-    x$metainfo$solution[[1]] <- ":MULTICHOICE:=A~B"
-    expect_error(asRqtiItem(x), "Only numeric Moodle")
+    x$metainfo$solution[[1]] <- ":UNKNOWN:=A~B"
+    expect_error(asRqtiItem(x), "Unsupported Moodle verbatim type")
 })
 
 test_that("QTI HTML preparation preserves assets and style declarations", {
