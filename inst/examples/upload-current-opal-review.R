@@ -1,5 +1,6 @@
 # Run in a normal R session with access to the existing OPAL credential store.
 # Replaces only the known review resource, keeping its URL and access settings.
+# OPAL's resource title is separate from the assessment title inside the ZIP.
 uploadCurrentOpalReview <- function(
     archive = "inst/extdata/exams2rqti-opal-review-seed-0.zip",
     provenance = "inst/extdata/exams2rqti-opal-review-build.csv",
@@ -25,9 +26,16 @@ uploadCurrentOpalReview <- function(
     receipt <- data.frame(resource_key = resource_key, url = result$url,
         uploaded_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z", tz = "Europe/Berlin"),
         build_date = build$date, archive_md5 = build$archive_md5,
-        adapter_commit = build$adapter_commit, rqti_commit = build$rqti_commit)
+        adapter_commit = build$adapter_commit, rqti_commit = build$rqti_commit,
+        resource_title = updated$displayname, assessment_title = build$title)
     utils::write.csv(receipt, file.path(dirname(archive), "opal-upload-receipt.csv"), row.names = FALSE)
     print(receipt)
+    if (!identical(updated$displayname, build$title)) {
+        message("The ZIP was replaced, but OPAL's resource title is still: ",
+            updated$displayname, "\n",
+            "Rename it separately in OPAL under Details and settings > Change description.\n",
+            "Suggested title: ", build$title)
+    }
     date_fields <- grep("date|modified", names(updated), ignore.case = TRUE, value = TRUE)
     if (length(date_fields)) print(updated[, c("key", date_fields), drop = FALSE])
     invisible(result)
