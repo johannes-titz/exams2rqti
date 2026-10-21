@@ -1,5 +1,10 @@
 # exams2rqti 0.1.0
 
+* Provide one shared OPAL/OpenOlat review archive. Explain standard QTI export
+  versus optional OpenOlat delivery configuration and retain earlier builds
+  for provenance. Normalize Pandoc formula classes in every archive exporter
+  and in `prepareQtiHtml()`, rather than only in the OpenOlat wrapper.
+
 * Accept negative percentage credits in numeric Moodle verbatim alternatives
   while preserving the configured score for unmatched responses.
 

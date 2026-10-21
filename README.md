@@ -31,51 +31,46 @@ section <- rqti::assessmentSection(items, identifier = "exercises")
 One filename returns one item; several filenames return a named list.
 `prepare_html = TRUE` moves inline styles into CSS bundled with the items.
 
-## Create a standard, OPAL or OpenOlat test
+## Create one archive for OPAL and OpenOlat
 
-Reuse the section with an rqti test constructor, or export OpenOlat directly
-from the source files:
+Use the OpenOlat constructor with the section created above:
 
 ```r
-test <- rqti::assessmentTest(
+test <- rqti::assessmentTestOpenOlat(
   section = list(section), identifier = "my_exam",
   rebuild_variables = NA, fallback_titles = "filename"
 )
 rqti::createQtiTest(test, dir = "qti-output", zip_only = TRUE)
-
-opal_test <- rqti::assessmentTestOpal(
-  section = list(section), identifier = "my_exam_opal",
-  rebuild_variables = NA, fallback_titles = "filename",
-  show_test_time = FALSE, mark_items = FALSE
-)
-rqti::createQtiTest(opal_test, dir = "qti-output/opal", zip_only = TRUE)
-
-exams2rqti::exams2openolat(
-  files, seed = 42, name = "my_exam_openolat", dir = "qti-output/openolat"
-)
 ```
 
-Import the resulting ZIP into the target player. The OPAL example disables two
-platform display extensions so the XML also validates against standard QTI 2.1.
+The ZIP contains a standard QTI 2.1 test plus `QTI21PackageConfig.xml`, which
+supplies OpenOlat delivery settings. OPAL imports the same ZIP without using
+that configuration. No OPAL-specific extensions are needed. The shared review
+archive below has been imported into both systems.
 
 ## Export directly from exams sources
 
-For a complete source-to-ZIP workflow, use the shared exporter or its platform
-wrappers:
+For the same source-to-ZIP workflow, use:
 
 ```r
-result <- exams2rqti::exams2qti21(files, n = 3, seed = 42, dir = "qti-output")
+result <- exams2rqti::exams2openolat(
+  files, n = 3, seed = 42, name = "my_exam", dir = "qti-output"
+)
 result$archive
-
-exams2rqti::exams2opal(files, n = 3, seed = 42, dir = "qti-output/opal")
-exams2rqti::exams2openolat(files, n = 3, seed = 42, dir = "qti-output/openolat")
 ```
 
-These calls share rendering, translation, section building, validation and
-packaging. The OpenOlat wrapper also adjusts Pandoc formula markup to prevent
-the player from adding a second pair of TeX delimiters. Additional
-rqti test settings, such as `max_attempts = 2`, can be passed directly.
-The wrappers create local ZIPs; they do not upload them.
+`exams2qti21(files, ...)` creates standard QTI without the optional OpenOlat
+configuration: the target LMS supplies its delivery defaults. A direct export
+without this configuration was also checked in OpenOlat. It uses the same item
+conversion, grading and formula normalization. `exams2openolat()` adds
+OpenOlat delivery settings; `exams2opal()` selects rqti's OPAL constructor when
+OPAL-specific settings are needed. Its timer and item-marking extensions default
+to `FALSE`. These functions create local ZIPs; uploading is separate.
+
+All archive exporters normalize already delimited Pandoc formulas, preventing
+OpenOlat from adding a second pair of TeX delimiters. `prepareQtiHtml()` applies
+the same normalization when preparing individual items. Additional rqti test
+settings, such as `max_attempts = 2`, can be passed directly.
 
 By default, the player selects one of the three variants of each exercise.
 Use `selection = "exam"` to select one complete generated exam instead.
@@ -105,11 +100,12 @@ one point. Component grading is unchanged.
 ## Review example and remaining limits
 
 [Open the OPAL review test](https://bildungsportal.sachsen.de/opal/auth/RepositoryEntry/56358502401)
-or [download the 45-item review archive](inst/extdata/exams2rqti-opal-review-seed-0.zip),
-rebuilt using `exams2opal()` and uploaded on **2026-10-21**. The user confirmed
-that it displays correctly in OPAL; scoring, feedback and manual grading still
-need systematic checks. Build details and the OpenOlat
-archive are in [the example-archive README](inst/extdata/README.md).
+or [download the shared 45-item review archive](inst/extdata/exams2rqti-review-seed-0.zip).
+The same ZIP was imported into OPAL and OpenOlat on **2026-10-21**. OpenOlat checks
+cover representative single/multiple-choice and numeric scoring, submitted
+free text, and an uploaded file whose saved contents were reopened. Assessor-side
+manual grading has not been checked. Build details, checksums and test scope are
+in [the archive README](inst/extdata/README.md).
 
 Moodle verbatim numeric, short-answer and choice syntax is translated to QTI,
 including partial credit, wildcards and checkboxes. Linked local supplements

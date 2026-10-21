@@ -1,59 +1,55 @@
 # Review packages
 
-`exams2rqti-opal-review-seed-0.zip` was rebuilt on **2026-10-21** through the
-current `exams2rqti::exams2opal()` exporter, with all **45 Rmd examples**, including
-the six examples whose inline styles are extracted into item CSS. The assessment
-title carries the build date, and item titles identify their source files.
-All 45 items and the assessment pass the structural/schema audit. The upload
-receipt records replacement of OPAL resource `56358502401` on **2026-10-21**
-at 13:48:02 +0200 with this archive's MD5. The user confirmed that the test
-displays correctly in OPAL. Systematic scoring, feedback and manual-grading
-checks remain outstanding.
+## One current archive for OPAL and OpenOlat
 
-`exams2rqti-opal-review-build.csv` records the exporter, build date, package
-versions, adapter/rqti Git commits and archive MD5. The internal
-`buildCurrentOpalReview()` function rebuilds the ZIP with today's date in its
-assessment title. From a local R session with working OPAL credentials, replace
-the complete test in the existing review resource with:
+[exams2rqti-review-seed-0.zip](exams2rqti-review-seed-0.zip) contains all **45 Rmd
+examples**, with seed 0, dated **2026-10-21**. Its MD5 is
+`0e8f7bdd2dcda334ed727b259f4db83e`. The ZIP contains standard QTI 2.1 and the
+optional `QTI21PackageConfig.xml` for OpenOlat. It does not use OPAL-specific
+assessment extensions. Both platforms imported exactly this ZIP: the OPAL API
+receipt and the local OpenOlat check identify the same checksum.
+
+All 45 items and the assessment pass QTI schema validation. OpenOlat checks
+cover full, partial and zero choice scores, numeric all-or-nothing scoring,
+submitted free text, and an uploaded text file whose stored content was reopened.
+The review enables OpenOlat's score display to make these checks visible.
+Assessor-side manual grading remains untested. Details are in
+`notes/openolat-acceptance-20261021.md`.
+
+`exams2rqti-review-build.csv` records the build date, dependency versions, source
+commits, dirty-worktree status and checksum. After `pkgload::load_all()`, use
+`exams2rqti:::buildCurrentReview(output)` to rebuild all examples. For ordinary
+exports, `exams2openolat(files, ...)` creates the same kind of shared package;
+`exams2qti21(files, ...)` omits the optional delivery configuration and uses the
+LMS defaults. All exporters normalize Pandoc formula markup.
+
+## Update the existing OPAL review
+
+From a normal R session with access to the existing OPAL credential store:
 
 ```r
 pkgload::load_all()
 exams2rqti:::uploadCurrentOpalReview() # or connection = con to reuse a connection
 ```
 
-The helper checks the ZIP's checksum and internal title, then sends the entire
-ZIP and its dated title to `PUT repo/entries/56358502401/update`. It verifies
-the returned resource key and checks its type and access settings after upload.
-It never creates a resource by title and makes no separate rename request.
-An expired supplied connection is authenticated once before uploading; a failed
-login reports its HTTP status.
+The helper verifies the current shared ZIP's checksum and internal title, then
+replaces resource `56358502401` through the API. It checks the returned key,
+resource type and access settings. It does not create a resource by title or
+make a separate rename request. The upload receipt is
+`opal-upload-receipt.csv`; the latest upload was **2026-10-21 at 14:53:19 +0200**.
+OPAL retains the outer repository label `exams2rqti`; the ZIP itself carries the
+dated 45-item title. This difference is recorded as `title_matches = FALSE`.
 
-OPAL's repository label is separate from the assessment title inside the ZIP.
-The earlier title-only request returned HTTP 400 on this server and has been
-removed. The latest receipt records the repository label `exams2rqti`, with
-`title_matches = FALSE`. The helper warns while returning the successful upload
-when the repository label differs from the assessment title.
+Review builders and the uploader are unexported helpers in `R/`.
 
-Review builders, upload helpers and audits are unexported functions in `R/`.
-`inst/examples` contains only the item-preview example; the exploratory corpus
-script is in `tools/check-choice-corpus.R`.
+## Earlier separate builds from 2026-10-21
 
-## OpenOlat review from 2026-10-21
-
-[The OpenOlat archive](exams2rqti-openolat-review-current-seed-0.zip) contains all 45 Rmd examples,
-rebuilt with `exams2openolat()` on 2026-10-21, including the OpenOlat package
-configuration. Build provenance is in `exams2rqti-openolat-review-build.csv`.
-After `pkgload::load_all()`, call
-`exams2rqti:::buildCurrentOpenOlatReview(output)` to rebuild it.
-
-An earlier build was imported into local OpenOlat 20.1.18 as resource `2228224`. All 45
-question pages opened; representative response submission and feedback were
-checked. Exact awarded points and manual grading are not yet verified. See
-`notes/openolat-acceptance-20261021.md` for the scope of the checks.
-The saved archive was subsequently rebuilt with the OpenOlat formula-markup fix
-and imported as resource `2228225`. All 45 pages opened again and the checked images
-loaded. The fruit and Cholesky formulas were visually verified without duplicate
-TeX delimiters. Its checksum is recorded in the build CSV.
+The earlier `exams2rqti-opal-review-seed-0.zip` and
+`exams2rqti-openolat-review-current-seed-0.zip` remain for provenance. They are
+superseded by the single shared archive above. Their original build records are
+`exams2rqti-opal-review-build.csv` and `exams2rqti-openolat-review-build.csv`.
+The earlier local OpenOlat resources are `2228224` and `2228225`; the current
+shared archive is resource `2228226`.
 
 ## Archived 2026-09-28 review
 
