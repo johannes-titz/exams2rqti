@@ -1,6 +1,3 @@
-sys.source(system.file("examples", "css-choice-variants.R", package = "exams2rqti"),
-           envir = environment())
-
 # Undo only the documented style relocation. Equality of the resulting XML
 # checks all text, image data, math, tables, feedback and scoring declarations.
 restore_example_styles <- function(doc) {
