@@ -17,6 +17,7 @@ Depends:
     R (>= 4.1.0)
 Imports:
     base64enc,
+    curl,
     exams (>= 2.4.4),
     htmltools,
     httr2,

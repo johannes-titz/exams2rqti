@@ -9,105 +9,112 @@ review_opal_connection <- function() {
     con
 }
 
-review_metadata_response <- function(title = "old", key = "56358502401", access = 4) {
-    body <- sprintf(paste0('{"key":"%s","displayname":"%s",',
-        '"resourceableTypeName":"FileResource.TEST","resourceableId":123,',
-        '"description":"<p>Keep description</p>","authors":"Author",',
-        '"externalRef":"keep-ref","access":%d}'), key, title, access)
-    httr2::response(headers = list(`content-type` = "application/json"),
-        body = charToRaw(body))
+review_upload_fixture <- function() {
+    output <- withr::local_tempdir(.local_envir = parent.frame())
+    archive <- file.path(output, "review.zip")
+    provenance <- system.file("extdata", "exams2rqti-opal-review-build.csv", package = "exams2rqti")
+    stopifnot(file.copy(system.file("extdata", "exams2rqti-opal-review-seed-0.zip",
+        package = "exams2rqti"), archive))
+    list(archive = archive, provenance = provenance, build = read.csv(provenance),
+        receipt = file.path(output, "opal-upload-receipt.csv"))
 }
 
-test_that("review renaming posts metadata without a file and verifies the result", {
+review_upload_response <- function(key = "56358502401") {
+    httr2::response(headers = list(`content-type` = "application/xml"),
+        body = charToRaw(paste0("<repositoryEntryVO><key>", key, "</key></repositoryEntryVO>")))
+}
+
+test_that("review updates the full ZIP and dated title at the existing resource key", {
     con <- review_opal_connection()
+    fixture <- review_upload_fixture()
+    title <- fixture$build$title
+    reads <- 0L
     requests <- list()
+    # Duplicate labels must not cause a name lookup or creation of a new resource.
+    resources <- data.frame(key = c("56358502401", "999"), displayname = "old",
+        resourceableTypeName = "FileResource.TEST", access = 4)
+    local_mocked_bindings(getLMSResources = function(...) {
+        reads <<- reads + 1L
+        if (reads > 1L) resources$displayname[1] <- title
+        resources
+    }, upload2LMS = function(...) stop("unexpected name-based upload"), .package = "rqti")
     local_mocked_bindings(req_perform = function(req, ...) {
         requests[[length(requests) + 1L]] <<- req
-        review_metadata_response(if (length(requests) == 1L) "old" else "new")
+        review_upload_response()
     }, .package = "httr2")
-    expect_message(result <- renameCurrentOpalReview("new", connection = con),
-        "OPAL resource title: new")
-    expect_identical(result$displayname, "new")
-    expect_length(requests, 3)
-    expect_true(all(vapply(requests, function(x)
-        x$url == "https://opal.example/restapi/repo/entries/56358502401", logical(1))))
-    expect_identical(requests[[2]]$method, "POST")
-    expect_identical(requests[[2]]$body$type, "multipart")
-    expect_equal(requests[[2]]$body$data, list(description = "<p>Keep description</p>",
-        authors = "Author", externalRef = "keep-ref", displayname = "new"))
-    expect_false(any(c("file", "access") %in% names(requests[[2]]$body$data)))
+    capture.output(result <- uploadCurrentOpalReview(fixture$archive, fixture$provenance,
+        connection = con))
+    expect_length(requests, 1L)
+    req <- requests[[1L]]
+    expect_identical(req$method, "PUT")
+    expect_identical(req$url, "https://opal.example/restapi/repo/entries/56358502401/update")
+    expect_identical(req$body$type, "multipart")
+    expect_identical(req$body$data$displayname, title)
+    expect_identical(req$body$data$file$path, normalizePath(fixture$archive))
+    expect_false("access" %in% names(req$body$data))
+    expect_identical(result$key, "56358502401")
+    expect_true(result$title_matches)
+    receipt <- read.csv(fixture$receipt)
+    expect_identical(receipt$resource_title, title)
+    expect_identical(receipt$archive_md5, fixture$build$archive_md5)
+    expect_true(receipt$title_matches)
 })
 
-test_that("review renaming is idempotent and rejects the wrong resource", {
+test_that("a retained OPAL label does not turn a successful ZIP upload into an error", {
     con <- review_opal_connection()
+    fixture <- review_upload_fixture()
     calls <- 0L
-    key <- "56358502401"
-    local_mocked_bindings(req_perform = function(req, ...) {
-        calls <<- calls + 1L
-        review_metadata_response("new", key = key)
-    }, .package = "httr2")
-    expect_silent(renameCurrentOpalReview("new", connection = con))
-    expect_identical(calls, 1L)
-    key <- "999"
-    expect_error(renameCurrentOpalReview("new", connection = con))
-    expect_identical(calls, 2L)
-    expect_error(renameCurrentOpalReview("", connection = con))
-    expect_error(renameCurrentOpalReview("new", resource_key = "../999", connection = con))
-    expect_identical(calls, 2L)
-})
-
-test_that("review renaming rejects unchanged titles and altered access", {
-    con <- review_opal_connection()
-    calls <- 0L
-    access <- 4
-    local_mocked_bindings(req_perform = function(req, ...) {
-        calls <<- calls + 1L
-        review_metadata_response(if (calls %% 3 == 1 || access == 4) "old" else "new",
-            access = if (calls %% 3 == 0) access else 4)
-    }, .package = "httr2")
-    expect_error(renameCurrentOpalReview("new", connection = con), "did not confirm")
-    access <- 1
-    expect_error(renameCurrentOpalReview("new", connection = con), "did not confirm")
-    expect_identical(calls, 6L)
-})
-
-test_that("review upload records ZIP success even if the separate rename fails", {
-    con <- review_opal_connection()
-    output <- withr::local_tempdir()
-    archive <- file.path(output, "review.zip")
-    provenance <- system.file("extdata", "exams2rqti-opal-review-build.csv",
-        package = "exams2rqti")
-    file.copy(system.file("extdata", "exams2rqti-opal-review-seed-0.zip",
-        package = "exams2rqti"), archive)
-    build <- read.csv(provenance)
-    receipt <- file.path(output, "opal-upload-receipt.csv")
-    uploads <- 0L
     resources <- data.frame(key = "56358502401", displayname = "old",
         resourceableTypeName = "FileResource.TEST", access = 4)
-    local_mocked_bindings(getLMSResources = function(...) resources,
-        upload2LMS = function(object, test, display_name, overwrite, open_in_browser) {
-            expect_identical(display_name, "old")
-            expect_true(overwrite)
-            expect_false(open_in_browser)
-            uploads <<- uploads + 1L
-            list(key = "56358502401", display_name = "old", url = "https://opal.example/review")
-        }, .package = "rqti")
-    local_mocked_bindings(renameCurrentOpalReview = function(title, resource_key, connection) {
-        expect_true(file.exists(receipt))
-        expect_identical(title, build$title)
-        stop("server refused rename")
-    })
-    expect_error(uploadCurrentOpalReview(archive, provenance, connection = con),
-        "ZIP was uploaded, but the title update failed: server refused rename")
-    expect_identical(uploads, 1L)
-    expect_identical(read.csv(receipt)$resource_title, "old")
-    local_mocked_bindings(renameCurrentOpalReview = function(title, ...) list(displayname = title))
-    capture.output(result <- uploadCurrentOpalReview(archive, provenance, connection = con))
-    expect_identical(result$display_name, build$title)
-    expect_identical(read.csv(receipt)$resource_title, build$title)
-    resources$displayname <- build$title
-    uploads_before <- uploads
-    resources <- resources[FALSE, ]
-    expect_error(uploadCurrentOpalReview(archive, provenance, connection = con))
-    expect_identical(uploads, uploads_before)
+    local_mocked_bindings(getLMSResources = function(...) resources, .package = "rqti")
+    local_mocked_bindings(req_perform = function(req, ...) {
+        calls <<- calls + 1L
+        review_upload_response()
+    }, .package = "httr2")
+    capture.output(expect_warning(result <- uploadCurrentOpalReview(fixture$archive,
+        fixture$provenance, connection = con), "ZIP was replaced successfully"))
+    expect_identical(calls, 1L)
+    expect_identical(result$display_name, "old")
+    expect_false(result$title_matches)
+    expect_false(read.csv(fixture$receipt)$title_matches)
+})
+
+test_that("review upload rejects missing targets and inconsistent archive titles before sending", {
+    con <- review_opal_connection()
+    fixture <- review_upload_fixture()
+    resources <- data.frame(key = character(), displayname = character(),
+        resourceableTypeName = character())
+    local_mocked_bindings(getLMSResources = function(...) resources, .package = "rqti")
+    local_mocked_bindings(req_perform = function(...) stop("unexpected HTTP request"),
+        .package = "httr2")
+    expect_error(uploadCurrentOpalReview(fixture$archive, fixture$provenance, connection = con),
+        "nrow\\(existing\\)")
+    bad <- fixture$build
+    bad$title <- "wrong title"
+    provenance <- file.path(dirname(fixture$archive), "bad-build.csv")
+    write.csv(bad, provenance, row.names = FALSE)
+    expect_error(uploadCurrentOpalReview(fixture$archive, provenance, connection = con),
+        "xml2::xml_attr")
+    expect_false(file.exists(fixture$receipt))
+})
+
+test_that("review upload checks the returned key and preserved access", {
+    con <- review_opal_connection()
+    fixture <- review_upload_fixture()
+    reads <- 0L
+    wrong_key <- TRUE
+    local_mocked_bindings(getLMSResources = function(...) {
+        reads <<- reads + 1L
+        data.frame(key = "56358502401", displayname = fixture$build$title,
+            resourceableTypeName = "FileResource.TEST", access = if (reads > 2L) 1 else 4)
+    }, .package = "rqti")
+    local_mocked_bindings(req_perform = function(req, ...) {
+        review_upload_response(if (wrong_key) "999" else "56358502401")
+    }, .package = "httr2")
+    expect_error(uploadCurrentOpalReview(fixture$archive, fixture$provenance, connection = con),
+        "returned_key")
+    wrong_key <- FALSE
+    expect_error(uploadCurrentOpalReview(fixture$archive, fixture$provenance, connection = con),
+        "updated\\$access")
+    expect_false(file.exists(fixture$receipt))
 })

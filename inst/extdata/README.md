@@ -10,36 +10,32 @@ at 11:06:59 +0200 with this archive's MD5. The new version has not received a
 live player audit.
 
 `exams2rqti-opal-review-build.csv` records the exporter, build date, package
-versions, adapter/rqti Git commits and archive MD5. Rebuild locally with
-`inst/examples/build-current-opal-review.R`. From a local R session with working
-OPAL credentials, replace only the existing review resource with:
+versions, adapter/rqti Git commits and archive MD5. The internal
+`buildCurrentOpalReview()` function rebuilds the ZIP with today's date in its
+assessment title. From a local R session with working OPAL credentials, replace
+the complete test in the existing review resource with:
 
 ```r
-source("inst/examples/upload-current-opal-review.R")
-uploadCurrentOpalReview()
+pkgload::load_all()
+exams2rqti:::uploadCurrentOpalReview()
 ```
 
-The upload helper checks the archive checksum, selects resource `56358502401`
-by its key, rejects ambiguous display names, and verifies that OPAL returns the
-same resource key. After replacing the ZIP it updates the OPAL resource title
-to the assessment title recorded in the build provenance, using a separate
-metadata request by resource key. It reads back the title and checks that
-existing resource metadata is unchanged. The URL, access settings and original
-creation date are preserved. If renaming fails, the upload receipt is retained
-and the helper reports that the ZIP upload succeeded but the title update failed.
+The helper checks the ZIP's checksum and internal title, then sends the entire
+ZIP and its dated title to `PUT repo/entries/56358502401/update`. It verifies
+the returned resource key and checks its type and access settings after upload.
+It never creates a resource by title and makes no separate rename request.
 
-To update only the title of the already-uploaded review, without reuploading:
+OPAL's repository label is separate from the assessment title inside the ZIP.
+The earlier title-only request returned HTTP 400 on this server and has been
+removed. Whether the update endpoint uses the accompanying `displayname` field
+still needs a live check. If OPAL retains its old label, the helper records
+`title_matches = FALSE` in the receipt and warns while returning the successful
+upload. Rebuilding the ZIP alone does not establish that the repository label
+changed.
 
-```r
-source("inst/examples/upload-current-opal-review.R")
-renameCurrentOpalReview()
-```
-
-The metadata operation is listed as `replaceResource` in the OPAL server's API
-description (`restapi/application.wadl`, retrieved on 2026-10-21). The upstream
-[OLAT implementation](https://github.com/OpenOLAT/OpenOLAT/blob/OpenOLAT_8.3.0/src/main/java/org/olat/restapi/repository/RepositoryEntryResource.java)
-accepts a multipart POST without a file to change the title. This integration
-has offline request tests; a live OPAL rename still needs verification.
+Review builders, upload helpers and audits are unexported functions in `R/`.
+`inst/examples` contains only the item-preview example; the exploratory corpus
+script is in `tools/check-choice-corpus.R`.
 
 ## Archived 2026-09-28 review
 
