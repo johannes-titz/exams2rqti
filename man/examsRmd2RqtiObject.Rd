@@ -15,7 +15,8 @@ examsRmd2RqtiObject(
   converter = "pandoc-mathjax",
   resolution = 100,
   quiet = TRUE,
-  prepare_html = FALSE
+  prepare_html = FALSE,
+  cloze_minvalue = NULL
 )
 }
 \arguments{
@@ -49,6 +50,11 @@ stem, replacing invalid characters and adding a prefix when necessary.}
 
 \item{prepare_html}{Apply \code{\link[=prepareQtiHtml]{prepareQtiHtml()}} to move inline styles into CSS
 and omit HTML5 download hints. Default \code{FALSE} preserves original HTML.}
+
+\item{cloze_minvalue}{Optional finite minimum cloze item score in points,
+at most its maximum score. \code{NULL} keeps exams' default zero floor. This
+overrides only the cloze total, leaving component grading unchanged;
+other exercise types in a batch are unaffected.}
 }
 \value{
 \code{examsRmd2RqtiObject()} returns one rqti item for one source, or a

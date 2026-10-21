@@ -13,8 +13,9 @@
 NULL
 
 methods::setClass("ExamsComposite", contains = "AssessmentItem",
-                  slots = c(parts = "list", manual = "logical", body = "character", source_type = "character", all_or_nothing = "logical"),
-                  prototype = list(all_or_nothing = FALSE))
+                  slots = c(parts = "list", manual = "logical", body = "character", source_type = "character", all_or_nothing = "logical",
+                      cloze_minvalue = "numeric"),
+                  prototype = list(all_or_nothing = FALSE, cloze_minvalue = NA_real_))
 methods::setClass("ExamsManual", contains = "AssessmentItem",
                   slots = c(kind = "character", expected_length = "numeric", expected_lines = "numeric",
                       format = "character", required = "logical", copypaste = "logical"),
@@ -48,7 +49,9 @@ partMinimum <- function(part) {
 }
 
 compositeMinimum <- function(object) {
-    if (object@source_type == "cloze") 0 else sum(vapply(object@parts, partMinimum, numeric(1)))
+    if (object@source_type == "cloze") {
+        if (is.na(object@cloze_minvalue)) 0 else object@cloze_minvalue
+    } else sum(vapply(object@parts, partMinimum, numeric(1)))
 }
 
 # Rename variables at rqti's tag-generation extension point, before export.
@@ -133,9 +136,10 @@ methods::setMethod("createResponseProcessing", "ExamsComposite", function(object
         total <- qtag("responseCondition", qtag("responseIf", condition, total),
                       qtag("responseElse", qset("SCORE", qtag("null"))))
     }
-    penalty <- object@source_type == "cloze" && any(vapply(object@parts, partMinimum, numeric(1)) < 0)
+    penalty <- object@source_type == "cloze" && (!is.na(object@cloze_minvalue) ||
+        any(vapply(object@parts, partMinimum, numeric(1)) < 0))
     floor <- if (penalty) qtag("responseCondition", qtag("responseIf",
-        qtag("lt", qvar("SCORE"), qvalue(0)), qset("SCORE", qvalue(0))))
+        qtag("lt", qvar("SCORE"), qvar("MINSCORE")), qset("SCORE", qvar("MINSCORE"))))
     qtag("responseProcessing", processing, auto_processing, total, floor)
 })
 

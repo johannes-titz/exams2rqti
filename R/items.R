@@ -14,6 +14,10 @@
 #'   are `partial = TRUE`, `negative = FALSE`, `rule = "false2"`.
 #' @param shuffle Whether rqti should additionally shuffle choices at delivery.
 #'   Defaults to `FALSE`: exams has already applied source shuffling/subsampling.
+#' @param cloze_minvalue Optional finite minimum cloze item score in points,
+#'   at most its maximum score. `NULL` keeps exams' default zero floor. This
+#'   overrides only the cloze total, leaving component grading unchanged;
+#'   other exercise types in a batch are unaffected.
 #' @return An `ExamsSingleChoice`, `ExamsMultipleChoice`, or `ExamsComposite`
 #'   object extending rqti classes.
 #' @details
@@ -39,7 +43,8 @@
 #' item/component maximum. Incorrect nonempty responses receive the penalty;
 #' omissions receive zero. A numeric vector is graded as one all-or-nothing
 #' response, with one penalty when complete and incorrect. Cloze totals retain
-#' their zero floor even when individual components have negative scores.
+#' their zero floor even when individual components have negative scores,
+#' unless `cloze_minvalue` supplies a different item-total floor.
 #' Text matching is case-sensitive. Cloze supports numeric, string, choice,
 #' essay and file responses and Moodle verbatim numeric, short-answer and choice
 #' syntax (including weighted checkboxes, aliases, escapes and text wildcards).
@@ -71,10 +76,11 @@
 #'                           solution = c(TRUE, FALSE), name = "Even number"))
 #' item <- asRqtiItem(x, identifier = "even")
 asRqtiItem <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
-                      points = NULL, eval = NULL, shuffle = FALSE) {
+                      points = NULL, eval = NULL, shuffle = FALSE, cloze_minvalue = NULL) {
     # rqti constructors evaluate random defaults even when IDs are supplied.
     withr::local_preserve_seed()
     validateExercise(x)
+    validateClozeMinimum(cloze_minvalue)
     class(x) <- unique(c(x$metainfo$type, "exams_exercise", class(x)))
     UseMethod("asRqtiItem", x)
 }
@@ -137,7 +143,7 @@ baseRqtiArgs <- function(x, path_rmd, identifier, title, points, shuffle) {
 
 #' @export
 asRqtiItem.schoice <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
-                              points = NULL, eval = NULL, shuffle = FALSE) {
+                              points = NULL, eval = NULL, shuffle = FALSE, cloze_minvalue = NULL) {
     x <- embedSupplements(x)
     args <- baseRqtiArgs(x, path_rmd, identifier, title, points, shuffle)
     args$solution <- which(x$metainfo$solution)
@@ -147,7 +153,7 @@ asRqtiItem.schoice <- function(x, path_rmd = NULL, identifier = NULL, title = NU
 
 #' @export
 asRqtiItem.mchoice <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
-                              points = NULL, eval = NULL, shuffle = FALSE) {
+                              points = NULL, eval = NULL, shuffle = FALSE, cloze_minvalue = NULL) {
     x <- embedSupplements(x)
     args <- baseRqtiArgs(x, path_rmd, identifier, title, points, shuffle)
     setup <- rqtiGradingSetup(x, args$points, eval)

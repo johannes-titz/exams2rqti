@@ -94,30 +94,30 @@ renderExamsExercises <- function(files, seed, converter, resolution, quiet,
 examsRmd2RqtiObject <- function(path_rmd, seed = 0, points = NULL, eval = NULL,
                                shuffle = FALSE, identifier = NULL, title = NULL,
                                converter = "pandoc-mathjax", resolution = 100,
-                               quiet = TRUE, prepare_html = FALSE) {
+                               quiet = TRUE, prepare_html = FALSE, cloze_minvalue = NULL) {
     if (length(path_rmd) > 1L) {
         if (!is.null(identifier) || !is.null(title)) {
             stop("identifier and title overrides require a single source.", call. = FALSE)
         }
         return(translateExamsBatch(path_rmd, seed = seed, points = points, eval = eval,
             shuffle = shuffle, converter = converter, resolution = resolution,
-            quiet = quiet, prepare_html = prepare_html))
+            quiet = quiet, prepare_html = prepare_html, cloze_minvalue = cloze_minvalue))
     }
     x <- readExamsExercise(path_rmd, seed, converter, resolution, quiet)
     item <- asRqtiItem(x, path_rmd = path_rmd, identifier = identifier, title = title,
-                      points = points, eval = eval, shuffle = shuffle)
+                      points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue)
     scalarLogical(prepare_html, "prepare_html")
     if (prepare_html) prepareQtiHtml(item) else item
 }
 
 translateExamsBatch <- function(files, seed = 0, points = NULL, eval = NULL,
                                shuffle = FALSE, converter = "pandoc-mathjax",
-                               resolution = 100, quiet = TRUE, prepare_html = FALSE) {
+                               resolution = 100, quiet = TRUE, prepare_html = FALSE, cloze_minvalue = NULL) {
     exercises <- renderExamsExercises(files, seed, converter, resolution, quiet)
     identifiers <- make.unique(vapply(files, fileIdentifier, character(1)), sep = "_")
     items <- lapply(seq_along(exercises), function(i) {
         asRqtiItem(exercises[[i]], identifier = identifiers[[i]],
-                   points = points, eval = eval, shuffle = shuffle)
+                   points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue)
     })
     names(items) <- identifiers
     scalarLogical(prepare_html, "prepare_html")

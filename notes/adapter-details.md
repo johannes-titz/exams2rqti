@@ -433,7 +433,8 @@ correct numeric/text response, -0.5 for an incorrect nonempty response, and zero
 for an omission. Numeric vectors apply this once to the complete response,
 rather than awarding partial credit for correct entries.
 Cloze retains its existing aggregation policy: component scores are added, with
-a zero floor for the complete item when any component permits penalties.
+a zero floor for the complete item when any component permits penalties, unless
+`cloze_minvalue` explicitly changes that floor in raw score points.
 
 For items containing essays/uploads, `AUTO_SCORE` is the automatic subtotal.
 `SCORE` has no default and remains null until a scorer supplies all manual
@@ -570,8 +571,13 @@ and arbitrary editor plugins are not portable editor settings.
 The cloze item-total zero floor matches the default of
 `exams::make_itembody_qti21()`. Negative component scores can reduce points earned
 elsewhere within that item, but the total cannot become negative. exams also
-allows an explicit `minvalue` override in its per-type writer settings; the rqti
-adapter currently keeps the default floor rather than exposing that override.
+allows an explicit `minvalue` override in its per-type writer settings. The
+adapter exposes the cloze total override as `cloze_minvalue`: a finite score in
+points, no greater than the item maximum. For example `cloze_minvalue = -1`
+allows a total down to minus one point. Positive minima also apply to omissions.
+`NULL` keeps the zero floor. Component penalties and `AUTO_SCORE` remain
+unchanged, and non-cloze items in a mixed batch are unaffected. The override
+works in `asRqtiItem()`, the file converter, assessment builder and exporters.
 
 The wider exams exporter interface primarily means custom XML templates,
 per-type writer functions/options, plotting/engine settings and platform options.

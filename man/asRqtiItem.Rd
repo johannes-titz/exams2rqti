@@ -11,7 +11,8 @@ asRqtiItem(
   title = NULL,
   points = NULL,
   eval = NULL,
-  shuffle = FALSE
+  shuffle = FALSE,
+  cloze_minvalue = NULL
 )
 }
 \arguments{
@@ -35,6 +36,11 @@ are \code{partial = TRUE}, \code{negative = FALSE}, \code{rule = "false2"}.}
 
 \item{shuffle}{Whether rqti should additionally shuffle choices at delivery.
 Defaults to \code{FALSE}: exams has already applied source shuffling/subsampling.}
+
+\item{cloze_minvalue}{Optional finite minimum cloze item score in points,
+at most its maximum score. \code{NULL} keeps exams' default zero floor. This
+overrides only the cloze total, leaving component grading unchanged;
+other exercise types in a batch are unaffected.}
 }
 \value{
 An \code{ExamsSingleChoice}, \code{ExamsMultipleChoice}, or \code{ExamsComposite}
@@ -66,7 +72,8 @@ Numeric and text penalties use the same \code{eval$negative} fraction of the
 item/component maximum. Incorrect nonempty responses receive the penalty;
 omissions receive zero. A numeric vector is graded as one all-or-nothing
 response, with one penalty when complete and incorrect. Cloze totals retain
-their zero floor even when individual components have negative scores.
+their zero floor even when individual components have negative scores,
+unless \code{cloze_minvalue} supplies a different item-total floor.
 Text matching is case-sensitive. Cloze supports numeric, string, choice,
 essay and file responses and Moodle verbatim numeric, short-answer and choice
 syntax (including weighted checkboxes, aliases, escapes and text wildcards).

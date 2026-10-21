@@ -95,8 +95,9 @@ rqti::render_qtijs(item)
 Here, a correct numeric answer earns 2 points, an incorrect answer loses 0.5,
 and an omitted answer earns zero. `eval` also controls choice grading and works
 in the file converters and exporters. All five exams choice rules are supported.
-Cloze components retain their weights; the total has a zero floor, matching
-exams' default. A penalty can reduce the score earned on other components.
+Cloze components retain their weights; the total defaults to a zero floor,
+matching exams. Use `cloze_minvalue = -1` to allow an item total down to minus
+one point. Component grading is unchanged.
 
 ## Review example and remaining limits
 

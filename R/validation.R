@@ -10,6 +10,13 @@ scalarText <- function(x, name) {
     }
 }
 
+validateClozeMinimum <- function(value) {
+    if (!is.null(value) && (!is.numeric(value) || length(value) != 1L ||
+        is.na(value) || !is.finite(value))) {
+        stop("cloze_minvalue must be NULL or one finite number in points.", call. = FALSE)
+    }
+}
+
 validateExercise <- function(x) {
     if (!is.list(x) || !is.list(x$metainfo)) {
         stop("x must be a rendered exams exercise with metainfo.", call. = FALSE)

@@ -35,12 +35,13 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
                         points = NULL, eval = NULL, shuffle = FALSE,
                         converter = "pandoc-mathjax", resolution = 100,
                         quiet = TRUE, prepare_html = TRUE, verify = TRUE,
-                        test_constructor = rqti::assessmentTest, ...) {
+                        test_constructor = rqti::assessmentTest, cloze_minvalue = NULL, ...) {
     selection <- match.arg(selection)
     scalarText(name, "name")
     scalarText(dir, "dir")
     scalarLogical(prepare_html, "prepare_html")
     scalarLogical(verify, "verify")
+    validateClozeMinimum(cloze_minvalue)
     if (!is.numeric(n) || length(n) != 1L || is.na(n) || !is.finite(n) ||
         n < 1 || n != floor(n)) stop("n must be a positive integer.", call. = FALSE)
     if (!is.function(test_constructor)) stop("test_constructor must be a function.", call. = FALSE)
@@ -53,7 +54,7 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
         lapply(seq_along(rendered[[v]]), function(i) {
             item <- asRqtiItem(rendered[[v]][[i]],
                 identifier = sprintf("%s_v%d_q%d", test_id, v, i),
-                points = points, eval = eval, shuffle = shuffle)
+                points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue)
             if (prepare_html) prepareQtiHtml(item) else item
         })
     })

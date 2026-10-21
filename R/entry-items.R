@@ -152,7 +152,7 @@ insertPartInteractions <- function(question, parts, types, labels) {
     question
 }
 
-asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffle) {
+asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffle, cloze_minvalue = NULL) {
     metadata <- x$metainfo
     types <- if (metadata$type == "cloze") metadata$clozetype else metadata$type
     solutions <- if (metadata$type == "cloze") metadata$solution else list(metadata$solution)
@@ -187,6 +187,9 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
         }
         weights <- points * weights / sum(weights)
     }
+    if (metadata$type == "cloze" && !is.null(cloze_minvalue) && cloze_minvalue > sum(weights)) {
+        stop("cloze_minvalue must not exceed the cloze item's maximum score.", call. = FALSE)
+    }
     sizes <- lengths(solutions)
     choices <- normalizeChoiceHtml(x$questionlist)
     if (length(choices) && length(choices) != sum(sizes)) {
@@ -219,14 +222,15 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
     }
     do.call(methods::new, c(list(Class = "ExamsComposite", parts = parts,
         manual = types %in% c("essay", "file"), body = body, source_type = metadata$type,
+        cloze_minvalue = if (metadata$type == "cloze" && !is.null(cloze_minvalue)) cloze_minvalue else NA_real_,
         all_or_nothing = vector_numeric), args))
 }
 
 #' @export
 asRqtiItem.num <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
-                          points = NULL, eval = NULL, shuffle = FALSE) {
+                          points = NULL, eval = NULL, shuffle = FALSE, cloze_minvalue = NULL) {
     x <- embedSupplements(x)
-    asCompositeItem(x, path_rmd, identifier, title, points, eval, shuffle)
+    asCompositeItem(x, path_rmd, identifier, title, points, eval, shuffle, cloze_minvalue)
 }
 #' @export
 asRqtiItem.string <- asRqtiItem.num
