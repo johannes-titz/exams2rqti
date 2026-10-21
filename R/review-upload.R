@@ -27,10 +27,24 @@ uploadCurrentOpalReview <- function(
     stopifnot(length(tests) == 1L,
         identical(xml2::xml_attr(tests[[1L]], "title"), build$title))
     title <- xml2::xml_attr(tests[[1L]], "title")
-    if (is.null(connection)) {
+    new_connection <- is.null(connection)
+    if (new_connection) {
         connection <- rqti::opal(endpoint = "https://bildungsportal.sachsen.de/opal/")
     }
-    if (!rqti::isUserLoggedIn(connection)) stop("OPAL login did not succeed.")
+    logged_in <- rqti::isUserLoggedIn(connection)
+    if (!logged_in && !new_connection) {
+        login_status <- rqti::authLMS(connection)
+        if (!isTRUE(login_status == 200)) {
+            stop("OPAL login failed with HTTP status ", login_status,
+                " at ", connection@endpoint, call. = FALSE)
+        }
+        logged_in <- rqti::isUserLoggedIn(connection)
+    }
+    if (!logged_in) {
+        stop("OPAL session verification failed at ", connection@endpoint,
+            ". Check the connection's authentication warning and endpoint.",
+            call. = FALSE)
+    }
     resources <- rqti::getLMSResources(connection)
     existing <- resources[as.character(resources$key) == resource_key, , drop = FALSE]
     stopifnot(nrow(existing) == 1L, existing$resourceableTypeName == "FileResource.TEST")

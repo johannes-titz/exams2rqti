@@ -37,7 +37,8 @@ test_that("review updates the full ZIP and dated title at the existing resource 
         reads <<- reads + 1L
         if (reads > 1L) resources$displayname[1] <- title
         resources
-    }, upload2LMS = function(...) stop("unexpected name-based upload"), .package = "rqti")
+    }, upload2LMS = function(...) stop("unexpected name-based upload"),
+    authLMS = function(...) stop("unexpected reauthentication"), .package = "rqti")
     local_mocked_bindings(req_perform = function(req, ...) {
         requests[[length(requests) + 1L]] <<- req
         review_upload_response()
@@ -58,6 +59,71 @@ test_that("review updates the full ZIP and dated title at the existing resource 
     expect_identical(receipt$resource_title, title)
     expect_identical(receipt$archive_md5, fixture$build$archive_md5)
     expect_true(receipt$title_matches)
+})
+
+test_that("an expired review connection is authenticated once before uploading", {
+    con <- review_opal_connection()
+    fixture <- review_upload_fixture()
+    con@session$token <- "expired-token"
+    logins <- 0L
+    uploads <- 0L
+    local_mocked_bindings(
+        isUserLoggedIn = function(object) identical(object@session$token, "fresh-token"),
+        authLMS = function(object, ...) {
+            logins <<- logins + 1L
+            object@session$token <- "fresh-token"
+            200L
+        },
+        getLMSResources = function(...) data.frame(key = "56358502401",
+            displayname = fixture$build$title, resourceableTypeName = "FileResource.TEST"),
+        .package = "rqti")
+    local_mocked_bindings(req_perform = function(req, ...) {
+        uploads <<- uploads + 1L
+        expect_identical(req$headers[["X-OLAT-TOKEN"]], "fresh-token")
+        review_upload_response()
+    }, .package = "httr2")
+    capture.output(result <- uploadCurrentOpalReview(fixture$archive, fixture$provenance,
+        connection = con))
+    expect_identical(logins, 1L)
+    expect_identical(uploads, 1L)
+    expect_true(result$title_matches)
+})
+
+test_that("failed authentication reports its status without uploading or retrying", {
+    con <- review_opal_connection()
+    fixture <- review_upload_fixture()
+    logins <- 0L
+    local_mocked_bindings(isUserLoggedIn = function(...) FALSE,
+        authLMS = function(...) {
+            logins <<- logins + 1L
+            401L
+        }, getLMSResources = function(...) stop("unexpected resource request"),
+        .package = "rqti")
+    expect_error(uploadCurrentOpalReview(fixture$archive, fixture$provenance,
+        connection = con), "HTTP status 401 at https://opal.example/", fixed = TRUE)
+    expect_identical(logins, 1L)
+    expect_false(file.exists(fixture$receipt))
+})
+
+test_that("an unverified fresh session stops before uploading", {
+    con <- review_opal_connection()
+    fixture <- review_upload_fixture()
+    logins <- 0L
+    local_mocked_bindings(isUserLoggedIn = function(...) FALSE,
+        authLMS = function(...) {
+            logins <<- logins + 1L
+            200L
+        }, opal = function(...) con,
+        getLMSResources = function(...) stop("unexpected resource request"),
+        .package = "rqti")
+    expect_error(uploadCurrentOpalReview(fixture$archive, fixture$provenance,
+        connection = con), "OPAL session verification failed", fixed = TRUE)
+    expect_identical(logins, 1L)
+    # opal() already authenticates during construction; do not repeat a failed login.
+    expect_error(uploadCurrentOpalReview(fixture$archive, fixture$provenance),
+        "OPAL session verification failed", fixed = TRUE)
+    expect_identical(logins, 1L)
+    expect_false(file.exists(fixture$receipt))
 })
 
 test_that("a retained OPAL label does not turn a successful ZIP upload into an error", {
