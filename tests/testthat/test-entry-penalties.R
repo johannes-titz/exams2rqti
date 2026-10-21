@@ -50,6 +50,16 @@ test_that("mixed cloze penalties retain component weights and the item zero floo
     expect_equal(wrong$SCORE, 0)
     expect_equal(score_qti(doc, responses = list(part1_RESPONSE = 2, part2_RESPONSE = "no")), 0.5)
     expect_valid_qti(item)
+    # Compare exams' emitted declarations, so the default floor is verified at
+    # the existing exporter boundary rather than inferred from our own formula.
+    x$questionlist <- c("number", "text")
+    x$metainfo$tolerance <- c(0, 0)
+    x$converter <- "pandoc-mathjax"
+    x$flavor <- "qti21"
+    native <- xml2::xml_ns_strip(xml2::read_xml(paste(
+        exams::make_itembody_qti21(eval = list(negative = 0.5))(x), collapse = "\n")))
+    expect_equal(as.numeric(xml2::xml_text(xml2::xml_find_first(native,
+        "//outcomeDeclaration[@identifier='MINSCORE']/defaultValue/value"))), 0)
 })
 
 test_that("numeric verbatim responses preserve partial credit with penalties", {

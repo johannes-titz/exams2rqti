@@ -296,7 +296,7 @@ small `createItemBody()` method preserves rendered HTML in answer choices: rqti
 1.3.0 otherwise escapes that markup as visible text. Scoring and QTI export stay
 with rqti for these types. Composite items combine rqti gap/choice interactions,
 scope their response identifiers, and add processing to total component scores.
-Manual upload/essay and numeric verbatim interactions have adapter methods.
+Manual upload/essay and verbatim interactions have adapter methods.
 All extensions use rqti's tag-generation methods before XML serialization.
 
 ```r
@@ -318,15 +318,15 @@ carry `metainfo$markup = "html"`. Sources are evaluated as R code during renderi
 | `num` | Absolute inclusive tolerance; numeric vectors require every field to be correct |
 | `string` | Exact, case-sensitive text matching; essay/file subtypes require human grading |
 | `cloze` | Mixed numeric, string, choice, essay and upload responses; numbered placeholders or appended fields |
-| Verbatim cloze | Numeric Moodle alternatives, ordered partial credit and conditional feedback; other verbatim syntaxes error |
+| Verbatim cloze | Numeric, short-answer, single-choice and checkbox Moodle syntax, aliases, ordered text alternatives, wildcards, partial/negative credits and feedback |
 | Unsupported grading | Error, never a silent approximation |
 | Point values | Exercise metadata (one point if absent), or a positive total `points` override per exercise; cloze uses component weights or equal shares |
 | Source shuffling/subsampling | Performed once by exams; the resulting order and answer alignment are retained |
 | Delivery shuffling | Off by default; opt in with `shuffle = TRUE` |
 | Feedback | General solution plus each choice paired with its explanation, in modal feedback |
 | Content | Rendered HTML, including tables and math spans, is preserved; missing image `alt` attributes receive an empty string |
-| Assets | Supported images/assets are embedded by exams; any remaining supplements cause an error |
-| Exercise metadata | exams type, title/name, solutions, tolerance, points and relevant response sizes are mapped; platform-specific editor/attachment settings are not |
+| Assets | exams embeds supported assets; the adapter embeds remaining linked local supplements before temporary files disappear; remote URLs remain remote |
+| Exercise metadata | Type, title/name, solutions, tolerance, points, component sizes, essay format and required text are mapped; attachment counts remain player settings |
 | Identifiers | Sanitized file stems; batch duplicates receive unique suffixes |
 | Randomness | A supplied seed is applied once per batch and restores the caller's RNG; `seed = NULL` advances the current stream |
 
@@ -339,8 +339,16 @@ inside the question; components without a placeholder are appended below it.
 The *verbatim* subtype is a separate exams input syntax that embeds a Moodle
 answer specification, for example `:NUMERICAL:=10:0.1~%50%9:0.1`: full credit
 within 0.1 of 10 and half credit within 0.1 of 9. It is parsed into native QTI
-numeric response processing; it is unrelated to free-text essays. Other Moodle
-verbatim response syntaxes are not implemented by this adapter.
+response processing; it is unrelated to free-text essays. Short answers support
+case-sensitive (`SHORTANSWER_C`) or insensitive (`SHORTANSWER`) matching, `*`
+wildcards, escaped delimiters and ordered partial-credit answers. `MULTICHOICE`
+uses a dropdown; `_V`/`_H` select radio-button layouts. `MULTIRESPONSE` uses
+checkboxes and requires positive credits to sum to 100 percent. Checkbox subtotals
+have a zero floor. Rich choices use buttons to preserve their markup. `_S`
+variants permit delivery shuffling when `shuffle = TRUE`. Standard aliases are
+accepted. This reads exams' `:TYPE:...` solutions, not a complete Moodle XML file.
+Moodle plugins, adaptive retry behaviour and player-side Unicode normalization
+are outside the translation.
 
 Ordinary exams numeric tolerance (`exnumtol`) is an absolute margin around the
 solution, with inclusive endpoints. The adapter retains that rule; rqti itself
@@ -355,9 +363,14 @@ content follows the rendered exams solution and choice explanations; the
 player and test settings control when it is shown.
 
 A *supplement* is a generated external file, such as an image or downloadable
-attachment. The HTML transformer embeds supported assets. If a file remains in
-`x$supplements`, its temporary path would disappear after rendering, so the
-adapter raises an error listing the files rather than creating broken links.
+attachment. The HTML transformer embeds supported assets. The adapter captures
+remaining linked local supplements as data URIs while their files still exist,
+rewriting HTML `href`/`src`/`data`/`poster` attributes and CSS `url()` references
+in questions, choices and feedback. MIME types come from the filename, with
+`application/octet-stream` as fallback. Missing files and ambiguous references
+error. Data URIs must be supported by the target LMS/browser; remote links remain
+remote. This does not crawl remote websites or recursively bundle dependencies
+inside an attached HTML/CSS document.
 
 The metadata row refers to exams' authoring fields, not rqti's LOM metadata.
 Authors can attach rqti metadata explicitly after conversion, for example
@@ -420,7 +433,7 @@ correct numeric/text response, -0.5 for an incorrect nonempty response, and zero
 for an omission. Numeric vectors apply this once to the complete response,
 rather than awarding partial credit for correct entries.
 Cloze retains its existing aggregation policy: component scores are added, with
-a zero floor for the complete item when a choice component permits penalties.
+a zero floor for the complete item when any component permits penalties.
 
 For items containing essays/uploads, `AUTO_SCORE` is the automatic subtotal.
 `SCORE` has no default and remains null until a scorer supplies all manual
@@ -446,7 +459,7 @@ Use `prepareQtiHtml(item)` or `prepare_html = TRUE` to move those declarations
 to item CSS and remove HTML5 `download` hints. Link targets, embedded attachment
 bytes and filenames in link text remain intact; the browser may display a link
 target instead of saving it. Other unsupported HTML is not silently removed.
-CSS URLs are not collected and the CSS cascade can differ from inline styling.
+CSS URLs referring to declared supplements are embedded; the CSS cascade can differ from inline styling.
 TikZ examples require working `magick`, ImageMagick and LaTeX installations.
 
 A separate, verified stylesheet experiment is in `notes/css-demo/`, with a
@@ -534,3 +547,47 @@ See `notes/corpus-report.csv` and `notes/corpus-report.md` for the recorded run.
 Run `inst/examples/check-choice-corpus.R` explicitly to get a per-file, per-seed
 report for the installed exams choice corpus. It distinguishes rendering errors
 from schema failures, rather than skipping either silently.
+
+
+## TestVision compatibility bridge
+
+`exams2testvision()` shares the renderer, source sampling and seed contract, then
+passes the already-rendered exercises to `exams::exams2testvision()`. It does not
+execute exercise code again. Each source/version becomes one item in a native
+TestVision bank, with TestVision's manifest metadata, CSS, numeric range encoding
+and response processing. There is no assessment section or player-side variant
+selection. rqti's extra grading policies and composite serializers are not used
+by this bridge; verbatim and manual essay/upload sources are explicitly rejected.
+Native per-type writer settings remain available in `...`. Generated ZIPs are
+checked for well-formed XML and complete manifest references; live import and
+scoring still need verification in TestVision.
+
+## Essay settings and platform enforcement
+
+`essay_format = "editor"` or `"editorfilepicker"` maps to QTI `format="xhtml"`;
+`"plain"` maps to `"plain"`, and `"monospaced"` to `"preformatted"`. This selects
+the response format, not a particular editor or file-picker implementation.
+`essay_required` maps to `minStrings`, `essay_fieldlines` to `expectedLines`, and
+component `maxchars` to display hints (width remains capped at 100 to avoid very
+wide ONYX fields). These hints do not enforce character or word limits.
+`essay_copypaste = FALSE` carries the same `essay-nocopypaste` class used by exams;
+a player must implement that convention to enforce it.
+
+QTI 2.1's upload interaction has no portable attachment-count or
+required-attachment attributes. `essay_attachments` and
+`essay_attachmentsrequired` therefore warn, rather than silently claiming to
+preserve enforcement. Use explicit `file` responses for uploads and configure
+counts/required submissions in the target LMS. Moodle's `noinline` editor mode
+and arbitrary editor plugins are not portable editor settings.
+
+The cloze item-total zero floor matches the default of
+`exams::make_itembody_qti21()`. Negative component scores can reduce points earned
+elsewhere within that item, but the total cannot become negative. exams also
+allows an explicit `minvalue` override in its per-type writer settings; the rqti
+adapter currently keeps the default floor rather than exposing that override.
+
+The wider exams exporter interface primarily means custom XML templates,
+per-type writer functions/options, plotting/engine settings and platform options.
+It does not imply that rqti cannot represent the core exercise types. Equivalent
+rqti test settings are passed to its constructors instead of emulating every
+exams argument name.

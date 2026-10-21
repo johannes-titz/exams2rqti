@@ -170,7 +170,8 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
     if (any(types %in% c("essay", "file")) &&
         (isTRUE(metadata$essay_attachmentsrequired) ||
          (!is.null(metadata$essay_attachments) && any(metadata$essay_attachments > 0)))) {
-        warning("QTI 2.1 cannot enforce essay attachment counts or required attachments. ",
+        warning("Essay attachment counts and required attachments need target-LMS configuration; ",
+            "QTI 2.1 upload fields have no matching attributes. ",
             "Use an explicit file response (exstringtype/exclozetype = 'file') and ",
             "configure attachment requirements in the target LMS.", call. = FALSE)
     }

@@ -67,9 +67,10 @@ result$archive
 
 exams2rqti::exams2opal(files, n = 3, seed = 42, dir = "qti-output/opal")
 exams2rqti::exams2openolat(files, n = 3, seed = 42, dir = "qti-output/openolat")
+exams2rqti::exams2testvision(files, n = 3, seed = 42, dir = "qti-output/testvision")
 ```
 
-These calls share rendering, translation, section building, validation and
+The standard, OPAL and OpenOlat calls share rendering, translation, section building, validation and
 packaging. Only the test constructor and platform defaults differ. Additional
 rqti test settings, such as `max_attempts = 2`, can be passed directly.
 The wrappers create local ZIPs; they do not upload them.
@@ -78,6 +79,10 @@ By default, the player selects one of the three variants of each exercise.
 Use `selection = "exam"` to select one complete generated exam instead.
 These functions use rqti's settings; they do not reproduce every argument of
 the corresponding exams exporters.
+
+TestVision uses a different QTI dialect. Its exporter shares rendering and uses
+exams' native TestVision writer to create an item bank, without test sections or
+variant selection. It does not apply rqti's grading extensions.
 
 ## Convert a rendered exercise or preview an item
 
@@ -95,7 +100,8 @@ rqti::render_qtijs(item)
 Here, a correct numeric answer earns 2 points, an incorrect answer loses 0.5,
 and an omitted answer earns zero. `eval` also controls choice grading and works
 in the file converters and exporters. All five exams choice rules are supported.
-Cloze components retain their weights; their total retains the existing zero floor.
+Cloze components retain their weights; the total has a zero floor, matching
+exams' default. A penalty can reduce the score earned on other components.
 
 ## Review example and remaining limits
 
@@ -104,7 +110,8 @@ or [download its 39-item QTI archive](inst/extdata/exams2rqti-openolat-review-se
 This saved subset predates the current exporter. Check appearance, feedback and
 manual grading in the target player after import.
 
-The adapter currently supports the numeric subset of Moodle verbatim cloze
-syntax. Platform-specific editor options are not mapped, and rendered sources
-must embed their assets; unresolved external supplements cause an error.
+Moodle verbatim numeric, short-answer and choice syntax is translated to QTI,
+including partial credit, wildcards and checkboxes. Linked local supplements
+are embedded; remote URLs remain remote. Essay format and size hints are mapped.
+Attachment counts and copy/paste restrictions still depend on the target LMS.
 Function help and [developer notes](notes/adapter-details.md) cover the details.

@@ -26,7 +26,7 @@ test_that("manual display sizes follow individual components", {
 
 test_that("attachment enforcement gaps are explicit and invalid hints fail early", {
     x <- entry_exercise("string", "nil", stringtype = "essay", essay_attachments = 2)
-    expect_warning(asRqtiItem(x), "cannot enforce essay attachment counts")
+    expect_warning(asRqtiItem(x), "attachment counts and required attachments")
     x$metainfo$essay_attachments <- NULL
     x$metainfo$essay_format <- "noinline"
     expect_error(asRqtiItem(x), "Unsupported essay_format")

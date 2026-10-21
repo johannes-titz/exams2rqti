@@ -68,15 +68,25 @@ omissions receive zero. A numeric vector is graded as one all-or-nothing
 response, with one penalty when complete and incorrect. Cloze totals retain
 their zero floor even when individual components have negative scores.
 Text matching is case-sensitive. Cloze supports numeric, string, choice,
-essay and file responses and the numeric subset of Moodle verbatim syntax.
+essay and file responses and Moodle verbatim numeric, short-answer and choice
+syntax (including weighted checkboxes, aliases, escapes and text wildcards).
 Essay/upload responses require human grading: \code{AUTO_SCORE} holds the automatic
 subtotal and \code{SCORE} stays unset until all manual component scores exist.
-Delivery-specific editor/attachment settings are not translated.
+Essay format, required text, field lines and per-component display sizes are
+mapped to QTI attributes. \code{essay_copypaste = FALSE} carries exams' conventional
+\code{essay-nocopypaste} class; enforcement depends on the player. File-picker
+integration and attachment-count requirements have no portable QTI 2.1
+equivalent; attachment requirements produce a warning. Explicit \code{file}
+responses remain available. Moodle plugins and adaptive retry penalties are
+outside this translation; Unicode normalization depends on the QTI player.
 
 General solution text and choice explanations are included as modal feedback.
 Explanations are paired with their choice text, so they remain identifiable
 when delivery shuffling is requested. Other exams metadata is not translated.
-Unembedded supplements are rejected. HTML is preserved, including math spans;
+Linked local supplements are embedded as data URIs before temporary files
+disappear, including links in choices and feedback. Missing or ambiguous
+supplements cause an error. Remote URLs are preserved and require
+network access at delivery. HTML is preserved, including math spans;
 missing image \code{alt} attributes are filled with an empty string for QTI validity.
 Authors should provide meaningful alternative text in their sources.
 QTI validity and LMS rendering should be checked separately.
