@@ -21,13 +21,25 @@ uploadCurrentOpalReview()
 
 The upload helper checks the archive checksum, selects resource `56358502401`
 by its key, rejects ambiguous display names, and verifies that OPAL returns the
-same resource key. It preserves the existing URL, access settings and OPAL
-resource title. The assessment title inside the ZIP does not rename the OPAL
-resource. In OPAL, use **Details and settings > Change description** to rename
-it to `exams2rqti OPAL review - 2026-10-21 - 45 Rmd items`. The resource's
-original creation date remains historical; the assessment title and upload
-receipt identify the fresh build. The helper reports any title mismatch after
-uploading.
+same resource key. After replacing the ZIP it updates the OPAL resource title
+to the assessment title recorded in the build provenance, using a separate
+metadata request by resource key. It reads back the title and checks that
+existing resource metadata is unchanged. The URL, access settings and original
+creation date are preserved. If renaming fails, the upload receipt is retained
+and the helper reports that the ZIP upload succeeded but the title update failed.
+
+To update only the title of the already-uploaded review, without reuploading:
+
+```r
+source("inst/examples/upload-current-opal-review.R")
+renameCurrentOpalReview()
+```
+
+The metadata operation is listed as `replaceResource` in the OPAL server's API
+description (`restapi/application.wadl`, retrieved on 2026-10-21). The upstream
+[OLAT implementation](https://github.com/OpenOLAT/OpenOLAT/blob/OpenOLAT_8.3.0/src/main/java/org/olat/restapi/repository/RepositoryEntryResource.java)
+accepts a multipart POST without a file to change the title. This integration
+has offline request tests; a live OPAL rename still needs verification.
 
 ## Archived 2026-09-28 review
 
