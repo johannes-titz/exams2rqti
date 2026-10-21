@@ -196,6 +196,7 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
 #' @export
 asRqtiItem.num <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
                           points = NULL, eval = NULL, shuffle = FALSE) {
+    x <- embedSupplements(x)
     asCompositeItem(x, path_rmd, identifier, title, points, eval, shuffle)
 }
 #' @export

@@ -10,7 +10,7 @@
 #' @return A rendered exams exercise list with HTML content and embedded assets.
 #' @details
 #' Rendering executes the R code in the source exercise. The HTML transformer
-#' embeds supported assets with base64; remaining supplements produce an error
+#' embeds supported assets with base64; linked local supplements are embedded
 #' before the temporary rendering directory is removed. Pandoc is required for
 #' the default converter; Rnw exercises may require a LaTeX toolchain.
 #' @export
@@ -71,13 +71,7 @@ renderExamsExercises <- function(files, seed, converter, resolution, quiet,
     }
     if (!is.null(seed)) withr::local_preserve_seed()
     result <- if (is.null(seed) || is.matrix(seed)) run() else withr::with_seed(seed, run())
-    rendered <- unlist(result, recursive = FALSE)
-    if (any(vapply(rendered, function(x) length(x$supplements) > 0L, logical(1)))) {
-        stop("Unembedded supplements remain after HTML conversion; these assets ",
-             "are outside the supported embedded-asset workflow: ",
-             paste(unique(unlist(lapply(rendered, `[[`, "supplements"))), collapse = ", "),
-             call. = FALSE)
-    }
+    result <- lapply(result, function(version) lapply(version, embedSupplements))
     if (keep_versions) result else result[[1L]]
 }
 

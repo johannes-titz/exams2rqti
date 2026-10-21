@@ -30,9 +30,6 @@ validateExercise <- function(x) {
             stop(field, " must be character HTML without missing values.", call. = FALSE)
         }
     }
-    if (length(x$supplements) > 0L) {
-        stop("Unembedded supplements are unsupported. Render with base64 = TRUE.", call. = FALSE)
-    }
     if (!type %in% c("schoice", "mchoice")) {
         if (is.null(x$metainfo$solution)) stop("metainfo$solution is required.", call. = FALSE)
         if (type == "cloze" && (!is.list(x$metainfo$solution) ||
@@ -57,10 +54,6 @@ validateExercise <- function(x) {
     if (length(x$solutionlist) > 0L && length(x$solutionlist) != length(choices)) {
         stop("solutionlist must contain one explanation per choice, or be empty.",
              call. = FALSE)
-    }
-    if (length(x$supplements) > 0L) {
-        stop("Unembedded supplements are unsupported. Render with base64 = TRUE ",
-             "and use supported embedded assets.", call. = FALSE)
     }
 }
 

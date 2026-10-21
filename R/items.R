@@ -128,6 +128,7 @@ baseRqtiArgs <- function(x, path_rmd, identifier, title, points, shuffle) {
 #' @export
 asRqtiItem.schoice <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
                               points = NULL, eval = NULL, shuffle = FALSE) {
+    x <- embedSupplements(x)
     args <- baseRqtiArgs(x, path_rmd, identifier, title, points, shuffle)
     args$solution <- which(x$metainfo$solution)
     args$scoring_scheme <- rqtiGradingSetup(x, args$points, eval)$scoring_scheme
@@ -137,6 +138,7 @@ asRqtiItem.schoice <- function(x, path_rmd = NULL, identifier = NULL, title = NU
 #' @export
 asRqtiItem.mchoice <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
                               points = NULL, eval = NULL, shuffle = FALSE) {
+    x <- embedSupplements(x)
     args <- baseRqtiArgs(x, path_rmd, identifier, title, points, shuffle)
     setup <- rqtiGradingSetup(x, args$points, eval)
     args[names(setup)] <- setup

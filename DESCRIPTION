@@ -16,9 +16,11 @@ Encoding: UTF-8
 Depends:
     R (>= 4.1.0)
 Imports:
+    base64enc,
     exams (>= 2.4.4),
     htmltools,
     methods,
+    mime,
     rqti (>= 1.3.1.9000),
     withr,
     xml2

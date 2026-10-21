@@ -33,7 +33,7 @@ Render an exams exercise as HTML
 }
 \details{
 Rendering executes the R code in the source exercise. The HTML transformer
-embeds supported assets with base64; remaining supplements produce an error
+embeds supported assets with base64; linked local supplements are embedded
 before the temporary rendering directory is removed. Pandoc is required for
 the default converter; Rnw exercises may require a LaTeX toolchain.
 }
