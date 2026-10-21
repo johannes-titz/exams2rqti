@@ -1,5 +1,8 @@
 # exams2rqti
 
+[![R CMD check and tests](https://github.com/johannes-titz/exams2rqti/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/johannes-titz/exams2rqti/actions/workflows/R-CMD-check.yaml)
+[![Status: WIP](https://img.shields.io/badge/status-WIP-orange)](https://github.com/johannes-titz/exams2rqti)
+
 Translate R/exams exercises into rqti objects and QTI 2.1 test archives.
 Supports choice, numeric, text and mixed cloze exercises, including essay and
 file-upload responses that require manual grading. This is a development package.
@@ -110,4 +113,4 @@ Moodle verbatim numeric, short-answer and choice syntax is translated to QTI,
 including partial credit, wildcards and checkboxes. Linked local supplements
 are embedded; remote URLs remain remote. Essay format and size hints are mapped.
 Attachment counts and copy/paste restrictions still depend on the target LMS.
-Function help and [developer notes](notes/adapter-details.md) cover the details.
+Function help covers the details.
