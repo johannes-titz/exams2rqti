@@ -33,7 +33,8 @@ One filename returns one item; several filenames return a named list.
 
 ## Create a standard, OPAL or OpenOlat test
 
-Reuse the section with the appropriate rqti test constructor:
+Reuse the section with an rqti test constructor, or export OpenOlat directly
+from the source files:
 
 ```r
 test <- rqti::assessmentTest(
@@ -49,11 +50,9 @@ opal_test <- rqti::assessmentTestOpal(
 )
 rqti::createQtiTest(opal_test, dir = "qti-output/opal", zip_only = TRUE)
 
-openolat_test <- rqti::assessmentTestOpenOlat(
-  section = list(section), identifier = "my_exam_openolat",
-  rebuild_variables = NA, fallback_titles = "filename"
+exams2rqti::exams2openolat(
+  files, seed = 42, name = "my_exam_openolat", dir = "qti-output/openolat"
 )
-rqti::createQtiTest(openolat_test, dir = "qti-output/openolat", zip_only = TRUE)
 ```
 
 Import the resulting ZIP into the target player. The OPAL example disables two
@@ -73,7 +72,8 @@ exams2rqti::exams2openolat(files, n = 3, seed = 42, dir = "qti-output/openolat")
 ```
 
 These calls share rendering, translation, section building, validation and
-packaging. Only the test constructor and platform defaults differ. Additional
+packaging. The OpenOlat wrapper also adjusts Pandoc formula markup to prevent
+the player from adding a second pair of TeX delimiters. Additional
 rqti test settings, such as `max_attempts = 2`, can be passed directly.
 The wrappers create local ZIPs; they do not upload them.
 
@@ -106,9 +106,10 @@ one point. Component grading is unchanged.
 
 [Open the OPAL review test](https://bildungsportal.sachsen.de/opal/auth/RepositoryEntry/56358502401)
 or [download the 45-item review archive](inst/extdata/exams2rqti-opal-review-seed-0.zip),
-rebuilt using `exams2opal()` and uploaded on **2026-10-21**. OPAL's resource
-label may still show the original date and item count. Check appearance,
-feedback and manual grading in the target player.
+rebuilt using `exams2opal()` and uploaded on **2026-10-21**. The user confirmed
+that it displays correctly in OPAL; scoring, feedback and manual grading still
+need systematic checks. Build details and the OpenOlat
+archive are in [the example-archive README](inst/extdata/README.md).
 
 Moodle verbatim numeric, short-answer and choice syntax is translated to QTI,
 including partial credit, wildcards and checkboxes. Linked local supplements

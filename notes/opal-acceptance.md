@@ -22,10 +22,16 @@ checked the local checksum and read back the resource key/type; this is not a
 server-side archive checksum or a new live player audit.
 
 The update preserves the URL, access settings and OPAL resource display name.
-The user reports that the display name still refers to 91 exercises and
-2026-09-27. It needs a separate metadata rename to match the assessment title
-above. The records below describe earlier live uploads and remain historical
-acceptance evidence.
+After the first upload, the user reported that the display name still referred
+to 91 exercises and 2026-09-27. The records below describe earlier live uploads
+and remain historical acceptance evidence.
+
+The latest receipt records another replacement at `2026-10-21T13:48:02+0200`
+with the same archive MD5 and resource key. The repository label is now
+`exams2rqti`; it still differs from the dated assessment title. After the helper
+was fixed to refresh expired connections once, the user confirmed that the test
+looks correct in OPAL. This is a display confirmation, not a systematic scoring,
+feedback or manual-grading audit.
 
 ## Earlier uploads and the 39-item review
 
