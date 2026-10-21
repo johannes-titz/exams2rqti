@@ -71,8 +71,9 @@ and omit HTML5 download hints. Defaults to \code{TRUE} for archive export.}
 
 \item{test_constructor}{rqti test constructor, for example
 \code{\link[rqti:assessmentTest]{rqti::assessmentTest()}}, \code{\link[rqti:assessmentTestOpal]{rqti::assessmentTestOpal()}} or
-\code{\link[rqti:assessmentTestOpenOlat]{rqti::assessmentTestOpenOlat()}}. The OpenOlat constructor also triggers
-formula-markup preparation to avoid duplicate TeX delimiters in the player.}
+\code{\link[rqti:assessmentTestOpenOlat]{rqti::assessmentTestOpenOlat()}}. The default creates standard QTI without
+platform configuration. The OpenOlat constructor adds the optional
+\code{QTI21PackageConfig.xml} delivery settings.}
 
 \item{cloze_minvalue}{Optional finite minimum cloze item score in points,
 at most its maximum score. \code{NULL} keeps exams' default zero floor. This
@@ -94,5 +95,9 @@ Export exams sources through rqti
 This is an alternative QTI 2.1 backend, not an argument-for-argument
 replacement for \code{exams::exams2qti21()}. Rendering and source/answer sampling
 run once through \code{xexams()}. Grading settings, including numeric/text
-penalties, are passed to rqti. The platform wrappers use this same pipeline.
+penalties, are passed to rqti. Every archive export normalizes already
+delimited Pandoc mathematics to avoid duplicate TeX delimiters in OpenOlat.
+The platform wrappers use this same pipeline. For one ZIP for OPAL and
+OpenOlat with OpenOlat delivery settings, use \code{\link[=exams2openolat]{exams2openolat()}}; it adds
+configuration alongside standard QTI, without OPAL-specific extensions.
 }

@@ -2,7 +2,8 @@
 #'
 #' @param item An rqti item produced by [asRqtiItem()].
 #' @return A copy with inline CSS moved to item stylesheets and HTML5 download
-#'   hints removed. Link targets, embedded file bytes and link text are retained.
+#'   hints removed, and redundant Pandoc math classes normalized. Link targets,
+#'   embedded file bytes, formula delimiters and link text are retained.
 #' @details This explicit opt-in step preserves CSS declarations but cannot
 #' guarantee identical CSS cascade or browser/LMS rendering. It does not collect
 #' dependencies referenced by CSS URLs. Unsupported HTML remains visible to
@@ -49,12 +50,12 @@ prepareQtiHtml <- function(item) {
         paste(ifelse(chars == ".", "\\.", chars), collapse = "")
     }, character(1))
     if (length(styles)) item@css <- paste(c(item@css, paste0(".", selectors, " { ", styles, " }")), collapse = "\n")
-    item
+    prepareQtiMath(item)
 }
 
 # OpenOlat treats the "math" class as a request to add TeX delimiters itself.
 # Pandoc already supplied delimiters, so retain the TeX and other span classes.
-prepareOpenOlatMath <- function(item) {
+prepareQtiMath <- function(item) {
     transform <- function(fragment) {
         if (!is.character(fragment) || !length(fragment)) return(fragment)
         vapply(fragment, function(html) {

@@ -11,7 +11,8 @@ prepareQtiHtml(item)
 }
 \value{
 A copy with inline CSS moved to item stylesheets and HTML5 download
-hints removed. Link targets, embedded file bytes and link text are retained.
+hints removed, and redundant Pandoc math classes normalized. Link targets,
+embedded file bytes, formula delimiters and link text are retained.
 }
 \description{
 Prepare rendered item HTML for standard QTI

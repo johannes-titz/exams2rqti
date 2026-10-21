@@ -17,8 +17,9 @@
 #'   and omit HTML5 download hints. Defaults to `TRUE` for archive export.
 #' @param test_constructor rqti test constructor, for example
 #'   [rqti::assessmentTest()], [rqti::assessmentTestOpal()] or
-#'   [rqti::assessmentTestOpenOlat()]. The OpenOlat constructor also triggers
-#'   formula-markup preparation to avoid duplicate TeX delimiters in the player.
+#'   [rqti::assessmentTestOpenOlat()]. The default creates standard QTI without
+#'   platform configuration. The OpenOlat constructor adds the optional
+#'   `QTI21PackageConfig.xml` delivery settings.
 #' @param ... Additional arguments for `test_constructor`, such as
 #'   `academic_grading`, `time_limit` or platform-specific feedback settings.
 #'   Arguments of `exams::exams2qti21()` are not forwarded implicitly.
@@ -29,7 +30,11 @@
 #' @details This is an alternative QTI 2.1 backend, not an argument-for-argument
 #'   replacement for `exams::exams2qti21()`. Rendering and source/answer sampling
 #'   run once through `xexams()`. Grading settings, including numeric/text
-#'   penalties, are passed to rqti. The platform wrappers use this same pipeline.
+#'   penalties, are passed to rqti. Every archive export normalizes already
+#'   delimited Pandoc mathematics to avoid duplicate TeX delimiters in OpenOlat.
+#'   The platform wrappers use this same pipeline. For one ZIP for OPAL and
+#'   OpenOlat with OpenOlat delivery settings, use [exams2openolat()]; it adds
+#'   configuration alongside standard QTI, without OPAL-specific extensions.
 #' @export
 exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
                         selection = c("pool", "exam"), seed = NULL, edir = NULL,
@@ -56,10 +61,7 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
             item <- asRqtiItem(rendered[[v]][[i]],
                 identifier = sprintf("%s_v%d_q%d", test_id, v, i),
                 points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue)
-            if (prepare_html) item <- prepareQtiHtml(item)
-            if (identical(test_constructor, rqti::assessmentTestOpenOlat)) {
-                item <- prepareOpenOlatMath(item)
-            }
+            item <- if (prepare_html) prepareQtiHtml(item) else prepareQtiMath(item)
             item
         })
     })
@@ -98,7 +100,12 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
 #' @details These wrappers select a test constructor; generation, translation,
 #'   section building, validation and packaging are shared with [exams2qti21()].
 #'   OPAL timer and item-marking extensions default to `FALSE` for standard QTI
-#'   validation. Both wrappers create local ZIP files; upload is separate.
+#'   validation. `exams2openolat()` adds `QTI21PackageConfig.xml` alongside the
+#'   standard QTI test; the same ZIP can also be imported into OPAL. The shared
+#'   review archive has been imported into both systems. [exams2qti21()] omits
+#'   this optional configuration by default and uses the target player's delivery
+#'   defaults. All exporters apply the same formula normalization.
+#'   Both wrappers create local ZIP files; upload is separate.
 #' @export
 exams2opal <- function(file, n = 1L, dir = ".", name = "opaltest", ...) {
     exportExamsPlatform(file, n, dir, name, rqti::assessmentTestOpal,

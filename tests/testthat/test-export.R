@@ -68,7 +68,7 @@ test_that("platform wrappers share conversion and select the correct constructor
     expect_error(exams2opal("unused.Rmd", quiet = TRUE, quiet = FALSE), "unique names")
 })
 
-test_that("OpenOlat does not wrap already delimited Pandoc mathematics twice", {
+test_that("all exporters normalize Pandoc mathematics for portable archives", {
     x <- choice_exercise("schoice", c(TRUE, FALSE))
     x$question <- '<p><span class="math inline special">\\(x^2\\)</span></p>'
     x$questionlist <- c('<span class="math inline">\\(2\\)</span>', "Other")
@@ -77,6 +77,7 @@ test_that("OpenOlat does not wrap already delimited Pandoc mathematics twice", {
     dir <- withr::local_tempdir()
     openolat <- exams2openolat("unused.Rmd", dir = dir, prepare_html = FALSE)
     opal <- exams2opal("unused.Rmd", dir = dir, prepare_html = FALSE)
+    standard <- exams2qti21("unused.Rmd", dir = dir, prepare_html = FALSE)
     item <- openolat$items[[1]][[1]]
     doc <- item_xml(item)
     expect_length(xml2::xml_find_all(doc,
@@ -85,7 +86,12 @@ test_that("OpenOlat does not wrap already delimited Pandoc mathematics twice", {
     expect_match(item@content[[1]], "\\(x^2\\)", fixed = TRUE)
     expect_match(item@choices[[1]], "\\(2\\)", fixed = TRUE)
     expect_match(item@feedback[[1]]@content[[1]], "\\[x^2\\]", fixed = TRUE)
-    expect_identical(opal$items[[1]][[1]]@content[[1]], x$question)
+    expect_identical(opal$items[[1]][[1]]@content, item@content)
+    expect_identical(standard$items[[1]][[1]]@content, item@content)
+    expect_identical(prepareQtiHtml(asRqtiItem(x))@content, item@content)
+    expect_true("QTI21PackageConfig.xml" %in% utils::unzip(openolat$archive, list = TRUE)$Name)
+    expect_false("QTI21PackageConfig.xml" %in% utils::unzip(standard$archive, list = TRUE)$Name)
     expect_valid_qti(openolat$assessment)
     expect_valid_qti(opal$assessment)
+    expect_valid_qti(standard$assessment)
 })

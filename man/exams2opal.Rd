@@ -34,5 +34,10 @@ Export exams sources for OPAL or OpenOlat
 These wrappers select a test constructor; generation, translation,
 section building, validation and packaging are shared with \code{\link[=exams2qti21]{exams2qti21()}}.
 OPAL timer and item-marking extensions default to \code{FALSE} for standard QTI
-validation. Both wrappers create local ZIP files; upload is separate.
+validation. \code{exams2openolat()} adds \code{QTI21PackageConfig.xml} alongside the
+standard QTI test; the same ZIP can also be imported into OPAL. The shared
+review archive has been imported into both systems. \code{\link[=exams2qti21]{exams2qti21()}} omits
+this optional configuration by default and uses the target player's delivery
+defaults. All exporters apply the same formula normalization.
+Both wrappers create local ZIP files; upload is separate.
 }
