@@ -17,7 +17,8 @@
 #'   and omit HTML5 download hints. Defaults to `TRUE` for archive export.
 #' @param test_constructor rqti test constructor, for example
 #'   [rqti::assessmentTest()], [rqti::assessmentTestOpal()] or
-#'   [rqti::assessmentTestOpenOlat()]. Items are platform independent.
+#'   [rqti::assessmentTestOpenOlat()]. The OpenOlat constructor also triggers
+#'   formula-markup preparation to avoid duplicate TeX delimiters in the player.
 #' @param ... Additional arguments for `test_constructor`, such as
 #'   `academic_grading`, `time_limit` or platform-specific feedback settings.
 #'   Arguments of `exams::exams2qti21()` are not forwarded implicitly.
@@ -55,7 +56,11 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
             item <- asRqtiItem(rendered[[v]][[i]],
                 identifier = sprintf("%s_v%d_q%d", test_id, v, i),
                 points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue)
-            if (prepare_html) prepareQtiHtml(item) else item
+            if (prepare_html) item <- prepareQtiHtml(item)
+            if (identical(test_constructor, rqti::assessmentTestOpenOlat)) {
+                item <- prepareOpenOlatMath(item)
+            }
+            item
         })
     })
     if (selection == "exam") {

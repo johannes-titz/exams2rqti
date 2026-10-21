@@ -71,7 +71,8 @@ and omit HTML5 download hints. Defaults to \code{TRUE} for archive export.}
 
 \item{test_constructor}{rqti test constructor, for example
 \code{\link[rqti:assessmentTest]{rqti::assessmentTest()}}, \code{\link[rqti:assessmentTestOpal]{rqti::assessmentTestOpal()}} or
-\code{\link[rqti:assessmentTestOpenOlat]{rqti::assessmentTestOpenOlat()}}. Items are platform independent.}
+\code{\link[rqti:assessmentTestOpenOlat]{rqti::assessmentTestOpenOlat()}}. The OpenOlat constructor also triggers
+formula-markup preparation to avoid duplicate TeX delimiters in the player.}
 
 \item{cloze_minvalue}{Optional finite minimum cloze item score in points,
 at most its maximum score. \code{NULL} keeps exams' default zero floor. This

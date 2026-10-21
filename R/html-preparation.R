@@ -51,3 +51,39 @@ prepareQtiHtml <- function(item) {
     if (length(styles)) item@css <- paste(c(item@css, paste0(".", selectors, " { ", styles, " }")), collapse = "\n")
     item
 }
+
+# OpenOlat treats the "math" class as a request to add TeX delimiters itself.
+# Pandoc already supplied delimiters, so retain the TeX and other span classes.
+prepareOpenOlatMath <- function(item) {
+    transform <- function(fragment) {
+        if (!is.character(fragment) || !length(fragment)) return(fragment)
+        vapply(fragment, function(html) {
+            if (!grepl("class=['\"][^'\"]*\\bmath\\b", html, perl = TRUE)) return(html)
+            doc <- xml2::read_xml(paste0("<div>", html, "</div>"), options = "NONET")
+            nodes <- xml2::xml_find_all(doc,
+                ".//span[contains(concat(' ', normalize-space(@class), ' '), ' math ')]")
+            changed <- FALSE
+            for (node in nodes) {
+                text <- trimws(xml2::xml_text(node))
+                delimited <- (startsWith(text, "\\(") && endsWith(text, "\\)")) ||
+                    (startsWith(text, "\\[") && endsWith(text, "\\]"))
+                if (!delimited) next
+                classes <- setdiff(strsplit(xml2::xml_attr(node, "class"), "\\s+")[[1L]], "math")
+                xml2::xml_set_attr(node, "class",
+                    if (length(classes)) paste(classes, collapse = " ") else NULL)
+                changed <- TRUE
+            }
+            if (!changed) return(html)
+            paste(vapply(xml2::xml_contents(xml2::xml_root(doc)), as.character,
+                character(1), options = character()), collapse = "")
+        }, character(1), USE.NAMES = FALSE)
+    }
+    item@content <- lapply(item@content, transform)
+    if ("choices" %in% methods::slotNames(item)) item@choices <- transform(item@choices)
+    if ("body" %in% methods::slotNames(item)) item@body <- transform(item@body)
+    item@feedback <- lapply(item@feedback, function(feedback) {
+        feedback@content <- lapply(feedback@content, transform)
+        feedback
+    })
+    item
+}

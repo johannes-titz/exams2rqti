@@ -67,3 +67,25 @@ test_that("platform wrappers share conversion and select the correct constructor
     expect_error(exams2opal("unused.Rmd", test_constructor = rqti::assessmentTest), "exams2qti21")
     expect_error(exams2opal("unused.Rmd", quiet = TRUE, quiet = FALSE), "unique names")
 })
+
+test_that("OpenOlat does not wrap already delimited Pandoc mathematics twice", {
+    x <- choice_exercise("schoice", c(TRUE, FALSE))
+    x$question <- '<p><span class="math inline special">\\(x^2\\)</span></p>'
+    x$questionlist <- c('<span class="math inline">\\(2\\)</span>', "Other")
+    x$solution <- '<p><span class="math display">\\[x^2\\]</span></p>'
+    local_mocked_bindings(renderExamsExercises = function(...) list(list(x)))
+    dir <- withr::local_tempdir()
+    openolat <- exams2openolat("unused.Rmd", dir = dir, prepare_html = FALSE)
+    opal <- exams2opal("unused.Rmd", dir = dir, prepare_html = FALSE)
+    item <- openolat$items[[1]][[1]]
+    doc <- item_xml(item)
+    expect_length(xml2::xml_find_all(doc,
+        "//span[contains(concat(' ', normalize-space(@class), ' '), ' math ')]"), 0L)
+    expect_match(item@content[[1]], 'class="inline special"', fixed = TRUE)
+    expect_match(item@content[[1]], "\\(x^2\\)", fixed = TRUE)
+    expect_match(item@choices[[1]], "\\(2\\)", fixed = TRUE)
+    expect_match(item@feedback[[1]]@content[[1]], "\\[x^2\\]", fixed = TRUE)
+    expect_identical(opal$items[[1]][[1]]@content[[1]], x$question)
+    expect_valid_qti(openolat$assessment)
+    expect_valid_qti(opal$assessment)
+})
