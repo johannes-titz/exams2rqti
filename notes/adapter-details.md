@@ -549,19 +549,6 @@ report for the installed exams choice corpus. It distinguishes rendering errors
 from schema failures, rather than skipping either silently.
 
 
-## TestVision compatibility bridge
-
-`exams2testvision()` shares the renderer, source sampling and seed contract, then
-passes the already-rendered exercises to `exams::exams2testvision()`. It does not
-execute exercise code again. Each source/version becomes one item in a native
-TestVision bank, with TestVision's manifest metadata, CSS, numeric range encoding
-and response processing. There is no assessment section or player-side variant
-selection. rqti's extra grading policies and composite serializers are not used
-by this bridge; verbatim and manual essay/upload sources are explicitly rejected.
-Native per-type writer settings remain available in `...`. Generated ZIPs are
-checked for well-formed XML and complete manifest references; live import and
-scoring still need verification in TestVision.
-
 ## Essay settings and platform enforcement
 
 `essay_format = "editor"` or `"editorfilepicker"` maps to QTI `format="xhtml"`;
