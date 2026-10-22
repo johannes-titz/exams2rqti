@@ -133,30 +133,27 @@ free text, and an uploaded file whose saved contents were reopened. Assessor-sid
 manual grading has not been checked. Build details, checksums and test scope are
 in [the archive README](inst/extdata/README.md).
 
-## Current translation limitations
+## Current limits for an exams backend
 
-- **Exporter interface:** the wrappers use rqti test settings, not the complete
-  exams exporter API. Custom exams XML templates, per-type writers and arbitrary
-  exporter options are not translated. Not all exams metadata is carried across.
-- **Numeric and text answers:** numeric tolerance is absolute with inclusive
-  boundaries; numeric vectors receive all-or-nothing scoring. Ordinary string
-  answers use exact, case-sensitive matching. Unicode normalization depends on
-  the QTI player.
-- **Moodle verbatim syntax:** numeric, short-answer and choice forms are supported,
-  including partial credit, text wildcards and checkboxes. Moodle plugins and
-  adaptive retry penalties are not translated; unsupported forms raise errors.
-- **Manual grading and essay settings:** essay and file responses require a
-  compatible LMS grading workflow. Final scores remain pending until manual
-  scores are supplied; assessor-side grading has not been verified in the review
-  tests. Essay size hints do not enforce character limits. Attachment counts,
-  required attachments, editor/file-picker integration and copy/paste restrictions
-  depend on the target LMS.
-- **HTML, CSS and assets:** schema validity does not guarantee identical layout,
-  formula rendering or feedback behaviour across players. `prepare_html = TRUE`
-  moves inline styles into CSS, which can change the cascade; unsupported HTML
-  can still fail validation. Linked local supplements are embedded, but CSS
-  dependencies are not collected by `prepareQtiHtml()`. Remote URLs remain remote
-  and require network access during delivery.
+To use rqti as exams' QTI backend, keep rendering and sampling in exams and pass
+the rendered HTML exercises to `asRqtiItem()`. The remaining integration work is:
 
-Function help describes the supported mappings in more detail. Check rendering,
-grading and submission behaviour after importing into the target LMS.
+- **Writer options:** the adapter does not expose exams' `casesensitive = FALSE`,
+  forced cloze buttons/dropdowns (`cloze_schoice_display`), or `solutionswitch`
+  feedback and hint modes. These need explicit mappings.
+- **Per-component grading:** exams' QTI writer accepts separate `eval` policies
+  for cloze components; the adapter currently applies one policy across them.
+- **Custom output:** exams XML templates, custom per-type writers and
+  flavour-specific output need migration to rqti constructors or methods.
+  The convenience exporters do not implement the complete exams exporter API.
+- **Adapter methods:** integration must retain or move the exams2rqti classes
+  and methods for rendered choice HTML, composite scoring, verbatim interactions
+  and manual responses, alongside rqti's serialization and packaging.
+- **Compatibility checks:** imports and representative automatic scoring have
+  been checked in OPAL and OpenOlat. Assessor-side manual grading and parity with
+  every existing platform-specific behaviour remain unverified.
+
+General QTI/player caveats also apply: layout, formula rendering, Unicode
+normalization, attachment requirements and copy/paste enforcement depend on the
+LMS. Essay size hints do not enforce character limits. Schema validation should
+be followed by rendering, grading and submission checks in the target LMS.
