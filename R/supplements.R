@@ -58,6 +58,9 @@ embedSupplements <- function(x) {
         fragments <- if (field %in% c("question", "solution")) paste(x[[field]], collapse = "\n") else x[[field]]
         x[[field]] <- vapply(fragments, rewrite, character(1), USE.NAMES = FALSE)
     }
+    if (length(x$metainfo$hint)) {
+        x$metainfo$hint <- vapply(x$metainfo$hint, rewrite, character(1), USE.NAMES = FALSE)
+    }
     x$supplements <- character()
     x
 }

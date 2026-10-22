@@ -14,8 +14,9 @@ NULL
 
 methods::setClass("ExamsComposite", contains = "AssessmentItem",
                   slots = c(parts = "list", manual = "logical", body = "character", source_type = "character", all_or_nothing = "logical",
-                      cloze_minvalue = "numeric"),
-                  prototype = list(all_or_nothing = FALSE, cloze_minvalue = NA_real_))
+                      cloze_minvalue = "numeric", solution_modes = "character"),
+                  prototype = list(all_or_nothing = FALSE, cloze_minvalue = NA_real_,
+                      solution_modes = ".legacy"))
 methods::setClass("ExamsManual", contains = "AssessmentItem",
                   slots = c(kind = "character", expected_length = "numeric", expected_lines = "numeric",
                       format = "character", required = "logical", copypaste = "logical"),
@@ -76,13 +77,15 @@ partTags <- function(tags, index) {
 #' @rdname ExamsComposite
 #' @export
 methods::setMethod("createItemBody", "ExamsComposite", function(object) {
-    qtag("itemBody", htmltools::HTML(object@body))
+    solutionHintBody(qtag("itemBody", htmltools::HTML(object@body)), object)
 })
 
 #' @rdname ExamsComposite
 #' @export
 methods::setMethod("createResponseDeclaration", "ExamsComposite", function(object) {
-    lapply(seq_along(object@parts), function(i) partTags(rqti::createResponseDeclaration(object@parts[[i]]), i))
+    htmltools::tagList(lapply(seq_along(object@parts), function(i) {
+        partTags(rqti::createResponseDeclaration(object@parts[[i]]), i)
+    }), solutionHintDeclaration(object))
 })
 
 #' @rdname ExamsComposite
@@ -100,7 +103,8 @@ methods::setMethod("createOutcomeDeclaration", "ExamsComposite", function(object
     })
     htmltools::tagList(total, qoutcome("MAXSCORE", object@points), qoutcome("MINSCORE", compositeMinimum(object)),
         qoutcome("AUTO_SCORE"), qoutcome("MANUAL_GRADING_REQUIRED", tolower(any(object@manual)), "boolean"),
-        qoutcome("FEEDBACKMODAL", "modal_feedback", "identifier"), parts)
+        if (legacySolutionFeedback(object)) qoutcome("FEEDBACKMODAL", "modal_feedback", "identifier"),
+        solutionFeedbackDeclarations(object), parts)
 })
 
 #' @rdname ExamsComposite
@@ -140,7 +144,8 @@ methods::setMethod("createResponseProcessing", "ExamsComposite", function(object
         any(vapply(object@parts, partMinimum, numeric(1)) < 0))
     floor <- if (penalty) qtag("responseCondition", qtag("responseIf",
         qtag("lt", qvar("SCORE"), qvar("MINSCORE")), qset("SCORE", qvar("MINSCORE"))))
-    qtag("responseProcessing", processing, auto_processing, total, floor)
+    qtag("responseProcessing", processing, auto_processing, total, floor,
+        solutionFeedbackProcessing(object))
 })
 
 #' @rdname ExamsComposite

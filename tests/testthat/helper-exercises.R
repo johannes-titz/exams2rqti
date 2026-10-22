@@ -34,7 +34,7 @@ expect_valid_qti <- function(object) {
 # rqti's choice classes. It reads declarations AND executes responseProcessing;
 # it does not score from the adapter's R objects or repeat its weight formula.
 # Unknown operators fail, so a changed upstream processing tree requires review.
-# Feedback and LMS/session behaviour are outside this test interpreter's scope.
+# LMS/session behaviour is outside this test interpreter's scope.
 score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = list(), outcomes = FALSE) {
     env <- new.env(parent = emptyenv())
     declarations <- xml2::xml_find_all(doc, "/assessmentItem/outcomeDeclaration")
@@ -42,7 +42,8 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
         value <- xml2::xml_text(xml2::xml_find_first(node, "defaultValue/value"))
         env[[xml2::xml_attr(node, "identifier")]] <- if (is.na(value)) NULL else {
             type <- xml2::xml_attr(node, "baseType")
-            if (is.na(type) || type %in% c("float", "integer")) as.numeric(value) else value
+            if (is.na(type) || type %in% c("float", "integer")) as.numeric(value)
+            else if (type == "boolean") value %in% c("true", "1") else value
         }
     }
     env$RESPONSE <- response
@@ -62,6 +63,8 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
                 value <- xml2::xml_text(node)
                 if (xml2::xml_attr(node, "baseType") %in% c("float", "integer")) {
                     as.numeric(value)
+                } else if (xml2::xml_attr(node, "baseType") == "boolean") {
+                    value %in% c("true", "1")
                 } else value
             },
             isNull = length(eval_node(children[[1L]])) == 0L,
@@ -80,6 +83,9 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
                     tolerance <- xml2::xml_attr(node, "tolerance")
                     if (is.na(tolerance)) tolerance <- "0 0"
                     tolerance <- as.numeric(strsplit(tolerance, " ", fixed = TRUE)[[1]])
+                    if (identical(xml2::xml_attr(node, "toleranceMode"), "relative")) {
+                        tolerance <- abs(b) * tolerance / 100
+                    }
                     a >= b - tolerance[1] && a <= b + tail(tolerance, 1)
                 }
             },
@@ -97,7 +103,13 @@ score_qti <- function(doc, response = NULL, responses = NULL, manual_scores = li
                 entries <- xml2::xml_find_all(mapping, "mapEntry")
                 keys <- xml2::xml_attr(entries, "mapKey")
                 weights <- as.numeric(xml2::xml_attr(entries, "mappedValue"))
-                selected <- match(unique(env[[identifier]]), keys)
+                response <- unique(env[[identifier]])
+                selected <- vapply(response, function(value) {
+                    sensitive <- xml2::xml_attr(entries, "caseSensitive") != "false"
+                    sensitive[is.na(sensitive)] <- TRUE
+                    matches <- ifelse(sensitive, keys == value, tolower(keys) == tolower(value))
+                    match(TRUE, matches)
+                }, integer(1))
                 scores <- weights[selected]
                 default <- as.numeric(xml2::xml_attr(mapping, "defaultValue"))
                 if (is.na(default)) default <- 0

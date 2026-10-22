@@ -12,7 +12,10 @@ asRqtiItem(
   points = NULL,
   eval = NULL,
   shuffle = FALSE,
-  cloze_minvalue = NULL
+  cloze_minvalue = NULL,
+  casesensitive = TRUE,
+  cloze_schoice_display = "auto",
+  solutionswitch = NULL
 )
 }
 \arguments{
@@ -32,7 +35,9 @@ stem, replacing invalid characters and adding a prefix when necessary.}
 
 \item{eval}{Named list overriding exams grading settings: \code{partial}, \code{negative},
 and/or \code{rule}. Overrides take precedence over \code{x$metainfo$eval}, then defaults
-are \code{partial = TRUE}, \code{negative = FALSE}, \code{rule = "false2"}.}
+are \code{partial = TRUE}, \code{negative = FALSE}, \code{rule = "false2"}. For cloze items,
+also accepts a list of policies, one per component (a one-element list is
+recycled). \code{NULL} entries retain the component's metadata/default policy.}
 
 \item{shuffle}{Whether rqti should additionally shuffle choices at delivery.
 Defaults to \code{FALSE}: exams has already applied source shuffling/subsampling.}
@@ -41,6 +46,19 @@ Defaults to \code{FALSE}: exams has already applied source shuffling/subsampling
 at most its maximum score. \code{NULL} keeps exams' default zero floor. This
 overrides only the cloze total, leaving component grading unchanged;
 other exercise types in a batch are unaffected.}
+
+\item{casesensitive}{Whether ordinary string answers are case-sensitive.
+Defaults to \code{TRUE}. Moodle verbatim aliases retain their own case rules.}
+
+\item{cloze_schoice_display}{Display for single-choice cloze components:
+\code{"auto"} uses dropdowns for embedded plain-text choices and buttons otherwise;
+\code{"buttons"} or \code{"dropdown"} forces that display. Forced dropdowns reject rich
+HTML choices rather than discard their formatting.}
+
+\item{solutionswitch}{\code{NULL} preserves the original solution
+feedback. \code{FALSE} omits solution and verbatim alternative feedback; \code{TRUE}
+selects exams' \code{"incorrect"} mode. A character vector can combine
+\code{"correct"}, \code{"incorrect"}, \code{"partial"}, \code{"summary"} and \code{"hint"}.}
 }
 \value{
 An \code{ExamsSingleChoice}, \code{ExamsMultipleChoice}, or \code{ExamsComposite}
@@ -64,7 +82,10 @@ for an incorrect answer, and awards zero for an omission. Single-choice
 scoring does not depend on \code{partial} or \code{rule}.
 The same \code{eval} argument is available in \code{\link[=examsRmd2RqtiObject]{examsRmd2RqtiObject()}},
 \code{\link[=exams2qti21]{exams2qti21()}} and \code{\link[=buildExams2RqtiAssessment]{buildExams2RqtiAssessment()}}. It applies to every
-item in a batch; use separate calls for different policies.
+item in a batch. Within cloze items, separate policies can be supplied through
+\code{eval = list(list(negative = 0.25), list(partial = FALSE))}. A flat override
+applies to every component; component overrides merge with their respective
+metadata settings.
 Numeric responses use absolute tolerance with inclusive boundaries. Numeric
 vectors require all entries to be correct; cloze components receive their
 own weights (equal shares of total points unless component points are given).
@@ -74,7 +95,8 @@ omissions receive zero. A numeric vector is graded as one all-or-nothing
 response, with one penalty when complete and incorrect. Cloze totals retain
 their zero floor even when individual components have negative scores,
 unless \code{cloze_minvalue} supplies a different item-total floor.
-Text matching is case-sensitive. Cloze supports numeric, string, choice,
+Text matching is case-sensitive unless \code{casesensitive = FALSE}. Cloze supports
+numeric, string, choice,
 essay and file responses and Moodle verbatim numeric, short-answer and choice
 syntax (including weighted checkboxes, aliases, escapes and text wildcards).
 Essay/upload responses require human grading: \code{AUTO_SCORE} holds the automatic
@@ -89,7 +111,15 @@ outside this translation; Unicode normalization depends on the QTI player.
 
 General solution text and choice explanations are included as modal feedback.
 Explanations are paired with their choice text, so they remain identifiable
-when delivery shuffling is requested. Other exams metadata is not translated.
+when delivery shuffling is requested. Explicit \code{solutionswitch} modes gate
+feedback by the final item score: \code{correct} at full credit, \code{incorrect} below
+full credit, and \code{partial} strictly between zero and full credit. \code{summary}
+supplies the separate \code{SOLUTIONMODAL} outcome below full credit, following
+exams' QTI writer. \code{hint} adds an \code{endAttemptInteraction} and shows
+\code{metainfo$hint}, falling back to the complete solution. Summary/hint delivery
+and attempt handling require support in the target player. Score-dependent
+feedback stays unset while manual scores are pending. Other exams metadata
+is not translated.
 Linked local supplements are embedded as data URIs before temporary files
 disappear, including links in choices and feedback. Missing or ambiguous
 supplements cause an error. Remote URLs are preserved and require

@@ -16,7 +16,8 @@ parseVerbatimNumeric <- function(solution) {
     })
 }
 
-makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuffle, metadata) {
+makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuffle, metadata,
+                         casesensitive = TRUE) {
     incorrect <- 0
     if (type %in% c("num", "string", "verbatim")) {
         policy <- do.call(exams::exams_eval, exerciseEval(list(metainfo = metadata), eval))
@@ -36,7 +37,7 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
     if (type == "string") {
         scalarText(solution, "String solution")
         return(rqti::textGap(solution, response_identifier = "RESPONSE", points = points,
-                             case_sensitive = TRUE, incorrect = incorrect))
+                             case_sensitive = casesensitive, incorrect = incorrect))
     }
     if (type == "verbatim") {
         if (!grepl("^:(NUMERIC|NUMERICAL|NM):", solution)) {
@@ -91,7 +92,7 @@ makeExamPart <- function(type, solution, choices, points, tolerance, eval, shuff
     stop("Unsupported cloze response type: ", type, call. = FALSE)
 }
 
-partInteraction <- function(part, type, index, embedded) {
+partInteraction <- function(part, type, index, embedded, display = "auto") {
     if (methods::is(part, "ExamsVerbatim")) {
         return(list(html = as.character(htmltools::tagList(partTags(
             rqti::createItemBody(part)$children, index))),
@@ -104,7 +105,12 @@ partInteraction <- function(part, type, index, embedded) {
     tags <- partTags(body$children, index)
     # Dropdowns preserve plain text inline choices. Rich HTML choices remain
     # block interactions so images, mathematics and emphasis are not lost.
-    inline <- embedded && type == "schoice" && !any(grepl("<", part@choices, fixed = TRUE))
+    rich <- type == "schoice" && any(grepl("<", part@choices, fixed = TRUE))
+    if (type == "schoice" && display == "dropdown" && rich) {
+        stop("Forced cloze dropdowns require plain-text choices; use buttons to preserve HTML.", call. = FALSE)
+    }
+    inline <- type == "schoice" && (display == "dropdown" ||
+        (display == "auto" && embedded && !rich))
     if (inline) {
         tags <- list(qtag("inlineChoiceInteraction", responseIdentifier = paste0("part", index, "_RESPONSE"),
             shuffle = tolower(part@shuffle), lapply(seq_along(part@choices), function(j) {
@@ -114,7 +120,7 @@ partInteraction <- function(part, type, index, embedded) {
     list(html = as.character(htmltools::tagList(tags)), block = !inline)
 }
 
-insertPartInteractions <- function(question, parts, types, labels) {
+insertPartInteractions <- function(question, parts, types, labels, display = "auto") {
     question <- paste(question, collapse = "\n")
     matches <- regmatches(question, gregexpr("##ANSWER[0-9]+##", question))[[1]]
     expected <- paste0("##ANSWER", seq_along(parts), "##")
@@ -123,7 +129,7 @@ insertPartInteractions <- function(question, parts, types, labels) {
     }
     for (i in seq_along(parts)) {
         embedded <- expected[i] %in% matches
-        interaction <- partInteraction(parts[[i]], types[i], i, embedded)
+        interaction <- partInteraction(parts[[i]], types[i], i, embedded, display)
         if (!embedded) {
             label <- if (types[i] %in% c("schoice", "mchoice")) "" else paste(labels[[i]], collapse = " ")
             question <- paste0(question, "<div>", if (nzchar(label)) paste0("<p>", label, "</p>"),
@@ -152,7 +158,8 @@ insertPartInteractions <- function(question, parts, types, labels) {
     question
 }
 
-asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffle, cloze_minvalue = NULL) {
+asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffle, cloze_minvalue = NULL,
+                            casesensitive = TRUE, cloze_schoice_display = "auto", solutionswitch = NULL) {
     metadata <- x$metainfo
     types <- if (metadata$type == "cloze") metadata$clozetype else metadata$type
     solutions <- if (metadata$type == "cloze") metadata$solution else list(metadata$solution)
@@ -200,17 +207,29 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
     if (is.null(tolerances)) tolerances <- 0
     if (!length(tolerances) %in% c(1L, n)) stop("Tolerance must be scalar or one value per response.", call. = FALSE)
     tolerances <- rep(tolerances, length.out = n)
+    policies <- componentEvalPolicies(metadata$eval, eval, n, metadata$type == "cloze")
     parts <- lapply(seq_len(n), function(i) {
         component <- metadata
+        component$eval <- policies[[i]]
         if (is.list(metadata$maxchars)) {
             if (!length(metadata$maxchars) %in% c(1L, n)) {
                 stop("maxchars must have one entry or one per component.", call. = FALSE)
             }
             component$maxchars <- rep(metadata$maxchars, length.out = n)[[i]]
         }
-        makeExamPart(types[i], solutions[[i]], groups[[i]], weights[i], tolerances[i], eval, shuffle, component)
+        part <- makeExamPart(types[i], solutions[[i]], groups[[i]], weights[i],
+            tolerances[i], NULL, shuffle, component, casesensitive)
+        if (identical(normalizeSolutionSwitch(solutionswitch), character()) &&
+            (methods::is(part, "ExamsVerbatim") || methods::is(part, "ExamsVerbatimNumeric"))) {
+            part@alternatives <- lapply(part@alternatives, function(answer) {
+                answer$feedback <- ""
+                answer
+            })
+        }
+        part
     })
-    body <- insertPartInteractions(normalizeChoiceHtml(x$question), parts, types, groups)
+    body <- insertPartInteractions(normalizeChoiceHtml(x$question), parts, types, groups,
+        cloze_schoice_display)
     feedback <- normalizeChoiceHtml(x$solutionlist)
     x$solutionlist <- character()
     args <- baseRqtiArgs(x, path_rmd, identifier, title, sum(weights), shuffle)
@@ -220,17 +239,20 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
         if (length(args$feedback)) args$feedback[[1]]@content <- c(args$feedback[[1]]@content, list(text))
         else args$feedback <- list(rqti::modalFeedback(content = list(text)))
     }
-    do.call(methods::new, c(list(Class = "ExamsComposite", parts = parts,
+    item <- do.call(methods::new, c(list(Class = "ExamsComposite", parts = parts,
         manual = types %in% c("essay", "file"), body = body, source_type = metadata$type,
         cloze_minvalue = if (metadata$type == "cloze" && !is.null(cloze_minvalue)) cloze_minvalue else NA_real_,
         all_or_nothing = vector_numeric), args))
+    configureSolutionFeedback(item, x, solutionswitch)
 }
 
 #' @export
 asRqtiItem.num <- function(x, path_rmd = NULL, identifier = NULL, title = NULL,
-                          points = NULL, eval = NULL, shuffle = FALSE, cloze_minvalue = NULL) {
+                          points = NULL, eval = NULL, shuffle = FALSE, cloze_minvalue = NULL,
+                          casesensitive = TRUE, cloze_schoice_display = "auto", solutionswitch = NULL) {
     x <- embedSupplements(x)
-    asCompositeItem(x, path_rmd, identifier, title, points, eval, shuffle, cloze_minvalue)
+    asCompositeItem(x, path_rmd, identifier, title, points, eval, shuffle, cloze_minvalue,
+        casesensitive, cloze_schoice_display, solutionswitch)
 }
 #' @export
 asRqtiItem.string <- asRqtiItem.num

@@ -10,6 +10,16 @@ scalarText <- function(x, name) {
     }
 }
 
+validateWriterOptions <- function(casesensitive, cloze_schoice_display, solutionswitch) {
+    scalarLogical(casesensitive, "casesensitive")
+    scalarText(cloze_schoice_display, "cloze_schoice_display")
+    if (!cloze_schoice_display %in% c("auto", "buttons", "dropdown")) {
+        stop("cloze_schoice_display must be auto, buttons or dropdown.", call. = FALSE)
+    }
+    normalizeSolutionSwitch(solutionswitch)
+    invisible(NULL)
+}
+
 validateClozeMinimum <- function(value) {
     if (!is.null(value) && (!is.numeric(value) || length(value) != 1L ||
         is.na(value) || !is.finite(value))) {

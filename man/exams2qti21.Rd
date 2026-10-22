@@ -23,6 +23,9 @@ exams2qti21(
   verify = TRUE,
   test_constructor = rqti::assessmentTest,
   cloze_minvalue = NULL,
+  casesensitive = TRUE,
+  cloze_schoice_display = "auto",
+  solutionswitch = NULL,
   ...
 )
 }
@@ -53,7 +56,9 @@ seeds restore the caller's RNG state.}
 
 \item{eval}{Named list overriding exams grading settings: \code{partial}, \code{negative},
 and/or \code{rule}. Overrides take precedence over \code{x$metainfo$eval}, then defaults
-are \code{partial = TRUE}, \code{negative = FALSE}, \code{rule = "false2"}.}
+are \code{partial = TRUE}, \code{negative = FALSE}, \code{rule = "false2"}. For cloze items,
+also accepts a list of policies, one per component (a one-element list is
+recycled). \code{NULL} entries retain the component's metadata/default policy.}
 
 \item{shuffle}{Whether rqti should additionally shuffle choices at delivery.
 Defaults to \code{FALSE}: exams has already applied source shuffling/subsampling.}
@@ -79,6 +84,19 @@ platform configuration. The OpenOlat constructor adds the optional
 at most its maximum score. \code{NULL} keeps exams' default zero floor. This
 overrides only the cloze total, leaving component grading unchanged;
 other exercise types in a batch are unaffected.}
+
+\item{casesensitive}{Whether ordinary string answers are case-sensitive.
+Defaults to \code{TRUE}. Moodle verbatim aliases retain their own case rules.}
+
+\item{cloze_schoice_display}{Display for single-choice cloze components:
+\code{"auto"} uses dropdowns for embedded plain-text choices and buttons otherwise;
+\code{"buttons"} or \code{"dropdown"} forces that display. Forced dropdowns reject rich
+HTML choices rather than discard their formatting.}
+
+\item{solutionswitch}{\code{NULL} preserves the original solution
+feedback. \code{FALSE} omits solution and verbatim alternative feedback; \code{TRUE}
+selects exams' \code{"incorrect"} mode. A character vector can combine
+\code{"correct"}, \code{"incorrect"}, \code{"partial"}, \code{"summary"} and \code{"hint"}.}
 
 \item{...}{Additional arguments for \code{test_constructor}, such as
 \code{academic_grading}, \code{time_limit} or platform-specific feedback settings.

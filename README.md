@@ -133,16 +133,39 @@ free text, and an uploaded file whose saved contents were reopened. Assessor-sid
 manual grading has not been checked. Build details, checksums and test scope are
 in [the archive README](inst/extdata/README.md).
 
+## Writer options
+
+The converters and exporters accept `casesensitive`, `cloze_schoice_display`
+and `solutionswitch`. For example, configure the two components of `lm.Rmd`
+separately and show solutions after an incorrect answer:
+
+```r
+x <- readExamsExercise("lm.Rmd", seed = 42)
+item <- asRqtiItem(
+  x, cloze_schoice_display = "buttons", solutionswitch = TRUE,
+  eval = list(list(negative = 0.25), list(negative = FALSE))
+)
+item <- prepareQtiHtml(item)
+```
+
+Use `casesensitive = FALSE` for ordinary string answers. Cloze display can be
+`"auto"`, `"buttons"` or `"dropdown"`; forced dropdowns require plain-text choices.
+A flat `eval` policy applies to every component; a list supplies one policy per
+component, with `NULL` entries retaining metadata/default settings.
+
+`solutionswitch = FALSE` omits solution feedback; `TRUE` shows it below full
+credit. Character modes can be combined: `"correct"` for full credit,
+`"incorrect"` below full credit, `"partial"` strictly between zero and full credit,
+`"summary"` for exams' separate summary outcome, and `"hint"` for a hint request.
+Hints use `metainfo$hint` or fall back to the solution. Summary/hint display and
+attempt handling depend on the player. The default `NULL` preserves the
+package's original solution feedback.
+
 ## Current limits for an exams backend
 
 To use rqti as exams' QTI backend, keep rendering and sampling in exams and pass
 the rendered HTML exercises to `asRqtiItem()`. The remaining integration work is:
 
-- **Writer options:** the adapter does not expose exams' `casesensitive = FALSE`,
-  forced cloze buttons/dropdowns (`cloze_schoice_display`), or `solutionswitch`
-  feedback and hint modes. These need explicit mappings.
-- **Per-component grading:** exams' QTI writer accepts separate `eval` policies
-  for cloze components; the adapter currently applies one policy across them.
 - **Custom output:** exams XML templates, custom per-type writers and
   flavour-specific output need migration to rqti constructors or methods.
   The convenience exporters do not implement the complete exams exporter API.
@@ -151,7 +174,9 @@ the rendered HTML exercises to `asRqtiItem()`. The remaining integration work is
   and manual responses, alongside rqti's serialization and packaging.
 - **Compatibility checks:** imports and representative automatic scoring have
   been checked in OPAL and OpenOlat. Assessor-side manual grading and parity with
-  every existing platform-specific behaviour remain unverified.
+  every existing platform-specific behaviour remain unverified. The new
+  feedback/hint modes have automated XML and processing checks; their delivery
+  still needs review in the target LMS.
 
 General QTI/player caveats also apply: layout, formula rendering, Unicode
 normalization, attachment requirements and copy/paste enforcement depend on the

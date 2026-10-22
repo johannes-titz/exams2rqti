@@ -1,9 +1,9 @@
 #' Choice objects with rendered HTML answers
 #'
-#' These classes extend rqti's choice classes solely to mark exams' rendered
-#' answer content as HTML during item-body construction. All response declarations,
-#' scoring, feedback and serialization remain inherited from rqti. The adapter
-#' uses the exported `createItemBody` extension point before XML serialization.
+#' These classes extend rqti's choice classes to preserve rendered HTML answers
+#' and apply optional exams feedback modes. Scoring remains inherited from rqti;
+#' the adapter adds hint declarations and feedback conditions through its
+#' tag-generation extension points before XML serialization.
 #' Construct objects with [asRqtiItem()], not with these classes directly.
 #'
 #' @name ExamsChoice
@@ -16,8 +16,10 @@
 #' @exportClass ExamsMultipleChoice
 NULL
 
-methods::setClass("ExamsSingleChoice", contains = "SingleChoice")
-methods::setClass("ExamsMultipleChoice", contains = "MultipleChoice")
+methods::setClass("ExamsSingleChoice", contains = "SingleChoice",
+    slots = c(solution_modes = "character"), prototype = list(solution_modes = ".legacy"))
+methods::setClass("ExamsMultipleChoice", contains = "MultipleChoice",
+    slots = c(solution_modes = "character"), prototype = list(solution_modes = ".legacy"))
 
 choiceHtmlBody <- function(body, object) {
     htmltools::tagQuery(body)$find("simpleChoice")$each(function(tag, index) {
@@ -31,11 +33,53 @@ choiceHtmlBody <- function(body, object) {
 #' @rdname ExamsChoice
 #' @export
 methods::setMethod("createItemBody", "ExamsSingleChoice", function(object) {
-    choiceHtmlBody(methods::callNextMethod(), object)
+    solutionHintBody(choiceHtmlBody(methods::callNextMethod(), object), object)
 })
 
 #' @rdname ExamsChoice
 #' @export
 methods::setMethod("createItemBody", "ExamsMultipleChoice", function(object) {
-    choiceHtmlBody(methods::callNextMethod(), object)
+    solutionHintBody(choiceHtmlBody(methods::callNextMethod(), object), object)
+})
+
+#' @rdname ExamsChoice
+#' @export
+methods::setMethod("createResponseDeclaration", "ExamsSingleChoice", function(object) {
+    htmltools::tagList(methods::callNextMethod(), solutionHintDeclaration(object))
+})
+
+#' @rdname ExamsChoice
+#' @export
+methods::setMethod("createResponseDeclaration", "ExamsMultipleChoice", function(object) {
+    htmltools::tagList(methods::callNextMethod(), solutionHintDeclaration(object))
+})
+
+#' @rdname ExamsChoice
+#' @export
+methods::setMethod("createOutcomeDeclaration", "ExamsSingleChoice", function(object) {
+    htmltools::tagList(methods::callNextMethod(object = scoringWithoutFeedback(object)),
+        solutionFeedbackDeclarations(object))
+})
+
+#' @rdname ExamsChoice
+#' @export
+methods::setMethod("createOutcomeDeclaration", "ExamsMultipleChoice", function(object) {
+    htmltools::tagList(methods::callNextMethod(object = scoringWithoutFeedback(object)),
+        solutionFeedbackDeclarations(object))
+})
+
+#' @rdname ExamsChoice
+#' @export
+methods::setMethod("createResponseProcessing", "ExamsSingleChoice", function(object) {
+    processing <- methods::callNextMethod(object = scoringWithoutFeedback(object))
+    processing$children <- c(processing$children, list(solutionFeedbackProcessing(object)))
+    processing
+})
+
+#' @rdname ExamsChoice
+#' @export
+methods::setMethod("createResponseProcessing", "ExamsMultipleChoice", function(object) {
+    processing <- methods::callNextMethod(object = scoringWithoutFeedback(object))
+    processing$children <- c(processing$children, list(solutionFeedbackProcessing(object)))
+    processing
 })

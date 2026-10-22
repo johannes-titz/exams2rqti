@@ -1,5 +1,21 @@
 default_eval <- list(partial = TRUE, negative = FALSE, rule = "false2")
 
+componentEvalPolicies <- function(metadata, override, n, cloze) {
+    expand <- function(settings) {
+        if (cloze && is.list(settings) && length(settings) &&
+            all(vapply(settings, function(x) is.null(x) || is.list(x), logical(1)))) {
+            if (!length(settings) %in% c(1L, n)) {
+                stop("Component eval must have one policy or one per cloze response.", call. = FALSE)
+            }
+            return(rep(settings, length.out = n))
+        }
+        rep(list(settings), n)
+    }
+    Map(function(source, explicit) {
+        exerciseEval(list(metainfo = list(eval = source)), explicit)
+    }, expand(metadata), expand(override))
+}
+
 exerciseEval <- function(x, eval = NULL) {
     policy <- default_eval
     for (override in list(x$metainfo$eval, eval)) {

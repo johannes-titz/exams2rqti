@@ -41,13 +41,15 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
                         points = NULL, eval = NULL, shuffle = FALSE,
                         converter = "pandoc-mathjax", resolution = 100,
                         quiet = TRUE, prepare_html = TRUE, verify = TRUE,
-                        test_constructor = rqti::assessmentTest, cloze_minvalue = NULL, ...) {
+                        test_constructor = rqti::assessmentTest, cloze_minvalue = NULL,
+                        casesensitive = TRUE, cloze_schoice_display = "auto", solutionswitch = NULL, ...) {
     selection <- match.arg(selection)
     scalarText(name, "name")
     scalarText(dir, "dir")
     scalarLogical(prepare_html, "prepare_html")
     scalarLogical(verify, "verify")
     validateClozeMinimum(cloze_minvalue)
+    validateWriterOptions(casesensitive, cloze_schoice_display, solutionswitch)
     if (!is.numeric(n) || length(n) != 1L || is.na(n) || !is.finite(n) ||
         n < 1 || n != floor(n)) stop("n must be a positive integer.", call. = FALSE)
     if (!is.function(test_constructor)) stop("test_constructor must be a function.", call. = FALSE)
@@ -60,7 +62,9 @@ exams2qti21 <- function(file, n = 1L, nsamp = NULL, dir = ".", name = "exam",
         lapply(seq_along(rendered[[v]]), function(i) {
             item <- asRqtiItem(rendered[[v]][[i]],
                 identifier = sprintf("%s_v%d_q%d", test_id, v, i),
-                points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue)
+                points = points, eval = eval, shuffle = shuffle, cloze_minvalue = cloze_minvalue,
+                casesensitive = casesensitive, cloze_schoice_display = cloze_schoice_display,
+                solutionswitch = solutionswitch)
             item <- if (prepare_html) prepareQtiHtml(item) else prepareQtiMath(item)
             item
         })

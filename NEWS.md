@@ -1,5 +1,12 @@
 # exams2rqti 0.1.0
 
+* Add case-insensitive ordinary string answers, per-component cloze grading,
+  and forced single-choice cloze buttons or plain-text dropdowns. Forward these
+  options through the single/batch converters, assessment builder and exporters.
+* Add explicit exams `solutionswitch` modes for conditional solutions, summaries
+  and requested hints. Preserve the original feedback behaviour by default;
+  keep final scores and score-dependent feedback pending until manual grading.
+
 * Provide one shared OPAL/OpenOlat review archive. Explain standard QTI export
   versus optional OpenOlat delivery configuration and retain earlier builds
   for provenance. Normalize Pandoc formula classes in every archive exporter

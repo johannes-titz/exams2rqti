@@ -6,11 +6,29 @@
 \alias{ExamsMultipleChoice-class}
 \alias{createItemBody,ExamsSingleChoice-method}
 \alias{createItemBody,ExamsMultipleChoice-method}
+\alias{createResponseDeclaration,ExamsSingleChoice-method}
+\alias{createResponseDeclaration,ExamsMultipleChoice-method}
+\alias{createOutcomeDeclaration,ExamsSingleChoice-method}
+\alias{createOutcomeDeclaration,ExamsMultipleChoice-method}
+\alias{createResponseProcessing,ExamsSingleChoice-method}
+\alias{createResponseProcessing,ExamsMultipleChoice-method}
 \title{Choice objects with rendered HTML answers}
 \usage{
 \S4method{createItemBody}{ExamsSingleChoice}(object)
 
 \S4method{createItemBody}{ExamsMultipleChoice}(object)
+
+\S4method{createResponseDeclaration}{ExamsSingleChoice}(object)
+
+\S4method{createResponseDeclaration}{ExamsMultipleChoice}(object)
+
+\S4method{createOutcomeDeclaration}{ExamsSingleChoice}(object)
+
+\S4method{createOutcomeDeclaration}{ExamsMultipleChoice}(object)
+
+\S4method{createResponseProcessing}{ExamsSingleChoice}(object)
+
+\S4method{createResponseProcessing}{ExamsMultipleChoice}(object)
 }
 \arguments{
 \item{object}{An adapter choice object.}
@@ -19,9 +37,9 @@
 \code{createItemBody()} returns an HTML tag representing the QTI item body.
 }
 \description{
-These classes extend rqti's choice classes solely to mark exams' rendered
-answer content as HTML during item-body construction. All response declarations,
-scoring, feedback and serialization remain inherited from rqti. The adapter
-uses the exported \code{createItemBody} extension point before XML serialization.
+These classes extend rqti's choice classes to preserve rendered HTML answers
+and apply optional exams feedback modes. Scoring remains inherited from rqti;
+the adapter adds hint declarations and feedback conditions through its
+tag-generation extension points before XML serialization.
 Construct objects with \code{\link[=asRqtiItem]{asRqtiItem()}}, not with these classes directly.
 }

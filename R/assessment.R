@@ -47,13 +47,16 @@ buildExams2RqtiAssessment <- function(
     exercise_dir = system.file("exercises", package = "exams"),
     seed = 0, verify = TRUE, files = NULL, points = NULL, eval = NULL,
     shuffle = FALSE, converter = "pandoc-mathjax", resolution = 100, quiet = TRUE,
-    prepare_html = FALSE, cloze_minvalue = NULL
+    prepare_html = FALSE, cloze_minvalue = NULL,
+    casesensitive = TRUE, cloze_schoice_display = "auto", solutionswitch = NULL
 ) {
     if (!is.null(seed)) withr::local_preserve_seed()
     scalarLogical(verify, "verify")
     if (is.null(files)) files <- unlist(exerciseFilesByType(exercise_dir), use.names = FALSE)
     items <- translateExamsBatch(files, seed, points, eval, shuffle, converter, resolution, quiet,
-        cloze_minvalue = cloze_minvalue)
+        cloze_minvalue = cloze_minvalue,
+        casesensitive = casesensitive, cloze_schoice_display = cloze_schoice_display,
+        solutionswitch = solutionswitch)
     scalarLogical(prepare_html, "prepare_html")
     if (prepare_html) items <- lapply(items, prepareQtiHtml)
     types <- vapply(items, function(x) {
