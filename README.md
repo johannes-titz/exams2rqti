@@ -169,9 +169,10 @@ the rendered HTML exercises to `asRqtiItem()`. The remaining integration work is
 - **Custom output:** exams XML templates, custom per-type writers and
   flavour-specific output need migration to rqti constructors or methods.
   The convenience exporters do not implement the complete exams exporter API.
-- **Adapter methods:** integration must retain or move the exams2rqti classes
+- **Adapter methods:** integration must continue to use exams2rqti's classes
   and methods for rendered choice HTML, composite scoring, verbatim interactions
-  and manual responses, alongside rqti's serialization and packaging.
+  and manual responses. These remain exams2rqti's responsibility; rqti provides
+  serialization and packaging.
 - **Compatibility checks:** imports and representative automatic scoring have
   been checked in OPAL and OpenOlat. Assessor-side manual grading and parity with
   every existing platform-specific behaviour remain unverified. The new
