@@ -8,6 +8,10 @@ The ZIP contains all **45 Rmd examples** from exams, rendered with seed 0 on
 OpenOlat delivery settings. Dependency versions and the checksum are in the
 [build record](exams2rqti-review-build.csv).
 
+Rechecked against the current code on **2026-10-23**: exercise content, scoring,
+image pixels and OpenOlat settings are unchanged. A fresh build adds licence
+text to the manifest; the download remains the original LMS-tested ZIP.
+
 All items and the assessment pass QTI schema validation. OpenOlat checks cover
 choice and numeric scoring, text submission and file uploads. Assessor-side
 manual grading remains untested.

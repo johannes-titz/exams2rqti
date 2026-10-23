@@ -161,25 +161,11 @@ Hints use `metainfo$hint` or fall back to the solution. Summary/hint display and
 attempt handling depend on the player. The default `NULL` preserves the
 package's original solution feedback.
 
-## Current limits for an exams backend
+## Limitations
 
-To use rqti as exams' QTI backend, keep rendering and sampling in exams and pass
-the rendered HTML exercises to `asRqtiItem()`. The remaining integration work is:
+The exporters cover common rendering, sampling and grading options from exams.
+They use rqti's test and platform settings and do not reproduce the complete
+exams exporter API.
 
-- **Custom output:** exams XML templates, custom per-type writers and
-  flavour-specific output need migration to rqti constructors or methods.
-  The convenience exporters do not implement the complete exams exporter API.
-- **Adapter methods:** integration must continue to use exams2rqti's classes
-  and methods for rendered choice HTML, composite scoring, verbatim interactions
-  and manual responses. These remain exams2rqti's responsibility; rqti provides
-  serialization and packaging.
-- **Compatibility checks:** imports and representative automatic scoring have
-  been checked in OPAL and OpenOlat. Assessor-side manual grading and parity with
-  every existing platform-specific behaviour remain unverified. The new
-  feedback/hint modes have automated XML and processing checks; their delivery
-  still needs review in the target LMS.
-
-General QTI/player caveats also apply: layout, formula rendering, Unicode
-normalization, attachment requirements and copy/paste enforcement depend on the
-LMS. Essay size hints do not enforce character limits. Schema validation should
-be followed by rendering, grading and submission checks in the target LMS.
+Essay size settings do not enforce character limits. Attachment-count
+requirements and copy/paste restrictions depend on LMS support and configuration.
