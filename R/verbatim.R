@@ -6,6 +6,14 @@ methods::setClass("ExamsVerbatim", contains = "AssessmentItem",
         multiple = "logical", inline = "logical", orientation = "character", shuffle = "logical",
         incorrect = "numeric"))
 
+#' @rdname ExamsComposite
+#' @export
+methods::setMethod("getScoreBounds", "ExamsVerbatim", function(object) {
+    credits <- vapply(object@alternatives, `[[`, numeric(1), "credit")
+    c(minimum = if (object@multiple) 0 else min(object@incorrect, min(0, credits) * object@points),
+      maximum = unname(object@points))
+})
+
 # Keep escapes until the final interpretation: splitting '~' must not unescape
 # '\#' before the later feedback split, nor '\*' before wildcard compilation.
 splitVerbatim <- function(text, separator, once = FALSE) {
@@ -115,9 +123,9 @@ methods::setMethod("createResponseDeclaration", "ExamsVerbatim", function(object
 #' @rdname ExamsComposite
 #' @export
 methods::setMethod("createOutcomeDeclaration", "ExamsVerbatim", function(object) {
-    credits <- vapply(object@alternatives, `[[`, numeric(1), "credit")
+    bounds <- getScoreBounds(object)
     htmltools::tagList(qoutcome("SCORE"), qoutcome("MAXSCORE", object@points),
-        qoutcome("MINSCORE", if (object@multiple) 0 else min(object@incorrect, min(0, credits) * object@points)),
+        qoutcome("MINSCORE", bounds[["minimum"]]),
         qtag("outcomeDeclaration", identifier = "FEEDBACK_RESPONSE",
             cardinality = if (object@multiple) "multiple" else "single", baseType = "identifier"))
 })

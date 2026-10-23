@@ -6,6 +6,8 @@
 \alias{ExamsComposite-class}
 \alias{ExamsManual-class}
 \alias{ExamsVerbatimNumeric-class}
+\alias{getScoreBounds,ExamsComposite-method}
+\alias{getScoreBounds,ExamsVerbatimNumeric-method}
 \alias{createItemBody,ExamsComposite-method}
 \alias{createResponseDeclaration,ExamsComposite-method}
 \alias{createOutcomeDeclaration,ExamsComposite-method}
@@ -16,12 +18,17 @@
 \alias{createOutcomeDeclaration,ExamsVerbatimNumeric-method}
 \alias{createText,ExamsVerbatimNumeric-method}
 \alias{ExamsVerbatim-class}
+\alias{getScoreBounds,ExamsVerbatim-method}
 \alias{createResponseDeclaration,ExamsVerbatim-method}
 \alias{createOutcomeDeclaration,ExamsVerbatim-method}
 \alias{createItemBody,ExamsVerbatim-method}
 \alias{createResponseProcessing,ExamsVerbatim-method}
 \title{Composite exams interactions}
 \usage{
+\S4method{getScoreBounds}{ExamsComposite}(object)
+
+\S4method{getScoreBounds}{ExamsVerbatimNumeric}(object)
+
 \S4method{createItemBody}{ExamsComposite}(object)
 
 \S4method{createResponseDeclaration}{ExamsComposite}(object)
@@ -40,6 +47,8 @@
 
 \S4method{createText}{ExamsVerbatimNumeric}(object)
 
+\S4method{getScoreBounds}{ExamsVerbatim}(object)
+
 \S4method{createResponseDeclaration}{ExamsVerbatim}(object)
 
 \S4method{createOutcomeDeclaration}{ExamsVerbatim}(object)
@@ -52,7 +61,8 @@
 \item{object}{An adapter interaction or composite assessment item.}
 }
 \value{
-The methods return QTI tags for rqti's serializer.
+Generation methods return QTI tags for rqti's serializer.
+\code{getScoreBounds()} returns the numeric \code{minimum} and \code{maximum} score.
 }
 \description{
 These rqti extensions combine numeric, text, choice, essay and upload

@@ -4,11 +4,12 @@
 #' responses in one item. Construct them with [asRqtiItem()]. Manual scores
 #' are deliberately left unset until supplied by the delivery/scoring system.
 #' @param object An adapter interaction or composite assessment item.
-#' @return The methods return QTI tags for rqti's serializer.
+#' @return Generation methods return QTI tags for rqti's serializer.
+#'   `getScoreBounds()` returns the numeric `minimum` and `maximum` score.
 #' @name ExamsComposite
 #' @aliases ExamsComposite-class ExamsManual-class ExamsVerbatimNumeric-class
 #' @importClassesFrom rqti NumericGap
-#' @importFrom rqti createResponseDeclaration createOutcomeDeclaration createResponseProcessing createText
+#' @importFrom rqti createResponseDeclaration createOutcomeDeclaration createResponseProcessing createText getScoreBounds
 #' @exportClass ExamsComposite ExamsManual ExamsVerbatimNumeric
 NULL
 
@@ -41,19 +42,27 @@ qoutcome <- function(id, value = 0, type = "float", ...) {
          ..., if (!is.null(value)) qtag("defaultValue", qtag("value", value)))
 }
 
-partMinimum <- function(part) {
-    declarations <- xml2::read_xml(paste0("<root>",
-        as.character(rqti::createOutcomeDeclaration(part)), "</root>"))
-    values <- as.numeric(xml2::xml_text(xml2::xml_find_all(declarations,
-        "//outcomeDeclaration[starts-with(@identifier,'MINSCORE')]/defaultValue/value")))
-    if (length(values)) min(values) else 0
-}
+partMinimum <- function(part) getScoreBounds(part)[["minimum"]]
 
 compositeMinimum <- function(object) {
     if (object@source_type == "cloze") {
         if (is.na(object@cloze_minvalue)) 0 else object@cloze_minvalue
     } else sum(vapply(object@parts, partMinimum, numeric(1)))
 }
+
+#' @rdname ExamsComposite
+#' @export
+methods::setMethod("getScoreBounds", "ExamsComposite", function(object) {
+    c(minimum = compositeMinimum(object), maximum = unname(object@points))
+})
+
+#' @rdname ExamsComposite
+#' @export
+methods::setMethod("getScoreBounds", "ExamsVerbatimNumeric", function(object) {
+    c(minimum = min(object@incorrect,
+        object@points * vapply(object@alternatives, function(x) x$credit, numeric(1))),
+      maximum = unname(object@points))
+})
 
 # Rename variables at rqti's tag-generation extension point, before export.
 partTags <- function(tags, index) {
@@ -191,8 +200,7 @@ methods::setMethod("createResponseProcessing", "ExamsVerbatimNumeric", function(
 #' @export
 methods::setMethod("createOutcomeDeclaration", "ExamsVerbatimNumeric", function(object) {
     declarations <- object
-    declarations@incorrect <- min(object@incorrect,
-        object@points * vapply(object@alternatives, function(x) x$credit, numeric(1)))
+    declarations@incorrect <- getScoreBounds(object)[["minimum"]]
     htmltools::tagList(methods::callNextMethod(object = declarations),
         qoutcome("FEEDBACK_RESPONSE", "none", "identifier"))
 })

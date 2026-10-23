@@ -219,6 +219,7 @@ asCompositeItem <- function(x, path_rmd, identifier, title, points, eval, shuffl
         }
         part <- makeExamPart(types[i], solutions[[i]], groups[[i]], weights[i],
             tolerances[i], NULL, shuffle, component, casesensitive)
+        if (methods::is(part, "Choice")) part@response_identifier <- paste0("part", i, "_RESPONSE")
         if (identical(normalizeSolutionSwitch(solutionswitch), character()) &&
             (methods::is(part, "ExamsVerbatim") || methods::is(part, "ExamsVerbatimNumeric"))) {
             part@alternatives <- lapply(part@alternatives, function(answer) {
